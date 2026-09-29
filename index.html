@@ -317,7 +317,7 @@ tbody tr:hover td{background:#14223a!important}
 .firebase-auth-actions{display:flex;gap:10px;margin-top:18px}.firebase-auth-actions button{flex:1;background:linear-gradient(135deg,#2f6df6,#1d4ed8)!important;border:1px solid #4e7cf5!important;color:#fff!important}
 #firebaseAuthError{min-height:20px;margin-top:12px;color:#ff8d8d;font-weight:700;font-size:13px}
 #firebaseShareBar{position:fixed;right:14px;bottom:14px;z-index:9998;display:flex;align-items:center;gap:8px;background:rgba(10,18,32,.94);border:1px solid #334563;border-radius:999px;padding:7px 9px 7px 13px;box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:12px;color:#dce8fa}
-#firebaseShareBadge{font-weight:800;white-space:nowrap}#firebaseLogoutBtn{height:30px;padding:0 10px;border-radius:999px;background:#17253d!important;color:#cbd7ea!important;border:1px solid #3a4d6d!important;font-size:11px}
+#firebaseShareBadge{font-weight:800;white-space:nowrap}#firebaseSaveNowBtn,#firebaseLogoutBtn{height:30px;padding:0 10px;border-radius:999px;background:#17253d!important;color:#cbd7ea!important;border:1px solid #3a4d6d!important;font-size:11px}#firebaseSaveNowBtn{background:#123b2b!important;color:#bdf5da!important;border-color:#2d7e5b!important}
 #firebaseSaveToast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:10000;background:#0f7d50;color:#fff;border:1px solid #2abb80;border-radius:999px;padding:8px 16px;font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:.2s}
 #firebaseSaveToast.show{opacity:1}
 @media(max-width:700px){#firebaseShareBar{left:8px;right:8px;bottom:8px;justify-content:center}#firebaseSaveToast{bottom:58px}}
@@ -335,7 +335,7 @@ tbody tr:hover td{background:#14223a!important}
     <div id="firebaseAuthError"></div>
   </div>
 </div>
-<div id="firebaseShareBar"><span id="firebaseShareBadge">Firebase：接続確認中…</span><button id="firebaseLogoutBtn" type="button" style="display:none">認証解除</button></div>
+<div id="firebaseShareBar"><span id="firebaseShareBadge">Firebase：接続確認中…</span><button id="firebaseSaveNowBtn" type="button">今すぐ保存</button><button id="firebaseLogoutBtn" type="button" style="display:none">認証解除</button></div>
 <div id="firebaseSaveToast">共有データを保存しました</div>
 <div class="wrap">
 <header><div><h1>新台関連業務アプリ</h1><div class="sub">配置図Excelと検定・認定期限Excelを読み込み、台番号ごとに機種名・検定番号・有効期限を照合して表示します。</div></div><div class="badge" id="badge">データ未読込</div></header>
@@ -344,7 +344,7 @@ tbody tr:hover td{background:#14223a!important}
 <div class="upload" id="drop"><h2>① 配置図Excel</h2><p>台番号・記号・メーカー・機種名が入った配置図を選択します。</p><label class="filebtn" for="file">配置図Excelを選択</label><input id="file" type="file" accept=".xlsx,.xls,.xlsm,.csv"><div class="status" id="status">未読込</div></div>
 <div class="upload" id="certDrop"><h2>② 検定・認定期限Excel</h2><p>C列＝検定機・認定機、D列＝メーカー、E列＝型式名、G列＝検定期限、H列＝認定期限、I列＝検定番号</p><label class="filebtn" for="certFile">期限Excelを選択</label><input id="certFile" type="file" accept=".xlsx,.xls,.xlsm,.csv"><div class="status" id="certStatus">未読込</div></div>
 <div class="upload" id="newDrop"><h2>③ 新台チェック表Excel</h2><p>【新台】欄を探し、D列の型式名をチェック表へ抽出します。</p><label class="filebtn" for="newMachineFile">新台データを選択</label><input id="newMachineFile" type="file" accept=".xlsx,.xls,.xlsm,.csv"><div class="status" id="newStatus">未読込</div></div>
-</div><div class="note" style="margin-top:14px">期限の採用ルール：現在日がG列の検定期限を過ぎている場合はH列（認定期限）を表示し、それ以外はG列を表示します。C列が「認定機」の機種には、丸囲みの「認」を表示します。</div></div>
+</div><div class="note" style="margin-top:14px">Firebase接続後は、読み込んだ配置図・期限資料・新台データと各入力内容を共有保存します。ページを閉じても次回自動復元します。<br>期限の採用ルール：現在日がG列の検定期限を過ぎている場合はH列（認定期限）を表示し、それ以外はG列を表示します。C列が「認定機」の機種には、丸囲みの「認」を表示します。</div></div>
 
 <div class="card"><div class="tabs"><button class="tab active" id="tabNumbers">台番号・機種一覧</button><button class="tab" id="tabMachines">機種マスタ</button><button class="tab" id="tabCert">検定・認定</button><button class="tab" id="tabCheck">チェック表</button><button class="tab" id="tabPop">POP発注書</button><button class="tab" id="tabDelivery">新台納品確認書</button></div></div>
 
@@ -506,12 +506,12 @@ function renderNewMachineCheck(){
   }).join('');
 }
 async function loadNewMachine(file){
-  try{$('newStatus').className='status';$('newStatus').textContent='新台データを読み込み中…';const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array',cellDates:false});newMachineRows=extractNewMachineRows(wb);if(!newMachineRows.length)throw new Error('【新台】欄のD列に機種を検出できませんでした。');$('newStatus').className='status ok';$('newStatus').textContent=`読込完了：${file.name} ／ ${newMachineRows.length}機種`;renderNewMachineCheck();renderDelivery();if($('popRows')){loadPop();savePop();}}catch(e){newMachineRows=[];$('newStatus').className='status err';$('newStatus').textContent='エラー：'+(e.message||e);renderNewMachineCheck();}}
+  try{$('newStatus').className='status';$('newStatus').textContent='新台データを読み込み中…';const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array',cellDates:false});newMachineRows=extractNewMachineRows(wb);if(!newMachineRows.length)throw new Error('【新台】欄のD列に機種を検出できませんでした。');$('newStatus').className='status ok';$('newStatus').textContent=`読込完了：${file.name} ／ ${newMachineRows.length}機種`;renderNewMachineCheck();renderDelivery();if($('popRows')){loadPop();savePop();}window.dispatchEvent(new CustomEvent('shindai-dataset-changed'));}catch(e){newMachineRows=[];$('newStatus').className='status err';$('newStatus').textContent='エラー：'+(e.message||e);renderNewMachineCheck();}}
 
 function extractNumbers(wb){let nums=[];for(const name of wb.SheetNames){const ws=wb.Sheets[name];if(!ws||!ws['!ref'])continue;const range=XLSX.utils.decode_range(ws['!ref']);const endRow=Math.min(range.e.r,74);for(let r=Math.max(range.s.r,5);r<=endRow;r++)for(let c=range.s.c;c<=range.e.c;c++){const cell=ws[XLSX.utils.encode_cell({r,c})];if(!cell)continue;const n=isMachineNumber(cell.v);if(n!==null)nums.push(n);}}return [...new Set(nums)].sort((a,b)=>a-b);}
 function extractMachines(wb){const out=[];const seen=new Set();for(const name of wb.SheetNames){const ws=wb.Sheets[name];if(!ws||!ws['!ref'])continue;const range=XLSX.utils.decode_range(ws['!ref']);for(let r=range.s.r;r<=range.e.r;r++){const headers=[];for(let c=range.s.c;c<=range.e.c;c++)if(txt(ws[XLSX.utils.encode_cell({r,c})]?.v)==='記号')headers.push(c);for(const codeCol of headers){let makerCol=-1,machineCol=-1;for(let c=codeCol+1;c<=Math.min(range.e.c,codeCol+14);c++){const h=txt(ws[XLSX.utils.encode_cell({r,c})]?.v);if(h==='メーカー'&&makerCol<0)makerCol=c;if(h==='機種名'&&machineCol<0)machineCol=c;}if(makerCol<0||machineCol<0)continue;let blankRun=0;for(let rr=r+1;rr<=range.e.r;rr++){const code=txt(ws[XLSX.utils.encode_cell({r:rr,c:codeCol})]?.v),maker=txt(ws[XLSX.utils.encode_cell({r:rr,c:makerCol})]?.v),machine=txt(ws[XLSX.utils.encode_cell({r:rr,c:machineCol})]?.v);if(!code&&!maker&&!machine){if(++blankRun>=4)break;continue}blankRun=0;if(!code||!maker||!machine||code==='記号')continue;const key=[code,maker,machine].join('\u0001');if(seen.has(key))continue;seen.add(key);out.push({code,maker,machine,certificationNo:'',certificationDeadline:'',deadlineSource:'',certType:'',isCertified:false});}}}}return out;}
 function extractCertRecords(wb){const out=[];for(const name of wb.SheetNames){const ws=wb.Sheets[name];if(!ws||!ws['!ref'])continue;const range=XLSX.utils.decode_range(ws['!ref']);for(let r=range.s.r;r<=range.e.r;r++){const type=txt(ws[XLSX.utils.encode_cell({r,c:2})]?.v);const marker=txt(ws[XLSX.utils.encode_cell({r,c:4})]?.v);const maker=txt(ws[XLSX.utils.encode_cell({r,c:3})]?.v);if(marker==='型式名'||maker==='メーカー名'){continue}const machine=marker;if(!maker||!machine)continue;const g=dateFromCell(ws[XLSX.utils.encode_cell({r,c:6})]);const h=dateFromCell(ws[XLSX.utils.encode_cell({r,c:7})]);const no=txt(ws[XLSX.utils.encode_cell({r,c:8})]?.w||ws[XLSX.utils.encode_cell({r,c:8})]?.v);if(!no&&!g&&!h)continue;out.push({maker,machine,certificationNo:no,g,h,certType:type,isCertified:type.includes('認定機')});}}return out;}
-function enrichMachines(){if(!machines.length)return;const idx=new Map();for(const c of certRecords){const k=norm(c.maker)+'|'+norm(c.machine);if(!idx.has(k))idx.set(k,[]);idx.get(k).push(c);}const now=today0();for(const m of machines){const list=idx.get(norm(m.maker)+'|'+norm(m.machine))||[];const c=list[0];if(!c){m.certificationNo='';m.certificationDeadline='';m.deadlineSource='';m.certType='';m.isCertified=false;continue}m.certificationNo=c.certificationNo||'';m.certType=c.certType||'';m.isCertified=!!c.isCertified;const useH=c.g&&now>c.g&&c.h;m.certificationDeadline=fmtDate(useH?c.h:c.g);m.deadlineSource=useH?'H列（認定期限）':'G列（検定期限）';}if(layoutWb)assignments=buildAssignments(layoutWb,machines);}
+function enrichMachines(){if(!machines.length)return;const idx=new Map();for(const c of certRecords){const k=norm(c.maker)+'|'+norm(c.machine);if(!idx.has(k))idx.set(k,[]);idx.get(k).push(c);}const now=today0();for(const m of machines){const list=idx.get(norm(m.maker)+'|'+norm(m.machine))||[];const c=list[0];if(!c){m.certificationNo='';m.certificationDeadline='';m.deadlineSource='';m.certType='';m.isCertified=false;continue}m.certificationNo=c.certificationNo||'';m.certType=c.certType||'';m.isCertified=!!c.isCertified;const useH=c.g&&now>c.g&&c.h;m.certificationDeadline=fmtDate(useH?c.h:c.g);m.deadlineSource=useH?'H列（認定期限）':'G列（検定期限）';}if(layoutWb){assignments=buildAssignments(layoutWb,machines);}else if(assignments.length){const byCode=new Map(machines.map(x=>[x.code,x]));assignments=assignments.map(a=>{const m=byCode.get(a.code);return m?{...a,maker:m.maker,machine:m.machine,certificationNo:m.certificationNo||'',certificationDeadline:m.certificationDeadline||'',deadlineSource:m.deadlineSource||'',certType:m.certType||'',isCertified:!!m.isCertified}:a;});}}
 function buildAssignments(wb,machineList){const master=new Map(machineList.map(x=>[x.code,x]));const result=new Map();for(const name of wb.SheetNames){const ws=wb.Sheets[name];if(!ws||!ws['!ref'])continue;const range=XLSX.utils.decode_range(ws['!ref']);const layoutEnd=Math.min(range.e.r,74);const merges=ws['!merges']||[];const mergeMap=new Map();for(const m of merges){if(m.s.r>layoutEnd)continue;for(let r=m.s.r;r<=Math.min(m.e.r,layoutEnd);r++)for(let c=m.s.c;c<=m.e.c;c++)mergeMap.set(r+','+c,m)}const visited=new Set();const numsAt=cells=>{const a=[];for(const [r,c] of cells){if(r<range.s.r||r>layoutEnd||c<range.s.c||c>range.e.c)continue;const n=isMachineNumber(ws[XLSX.utils.encode_cell({r,c})]?.v);if(n!==null)a.push(n)}return a};for(let r=range.s.r;r<=layoutEnd;r++)for(let c=range.s.c;c<=range.e.c;c++){const code=txt(ws[XLSX.utils.encode_cell({r,c})]?.v);if(!master.has(code))continue;const mg=mergeMap.get(r+','+c);const r1=mg?mg.s.r:r,r2=mg?mg.e.r:r,c1=mg?mg.s.c:c,c2=mg?mg.e.c:c;const key=[r1,c1,r2,c2].join(',');if(visited.has(key))continue;visited.add(key);const candidates=[numsAt(Array.from({length:c2-c1+1},(_,i)=>[r1-1,c1+i])),numsAt(Array.from({length:c2-c1+1},(_,i)=>[r2+1,c1+i])),numsAt(Array.from({length:r2-r1+1},(_,i)=>[r1+i,c1-1])),numsAt(Array.from({length:r2-r1+1},(_,i)=>[r1+i,c2+1]))];let best=[];for(const a of candidates)if(a.length>best.length)best=a;const info=master.get(code);for(const n of best)if(!result.has(n))result.set(n,{number:n,code:info.code,maker:info.maker,machine:info.machine,certificationNo:info.certificationNo||'',certificationDeadline:info.certificationDeadline||'',deadlineSource:info.deadlineSource||'',certType:info.certType||'',isCertified:!!info.isCertified});}}return [...result.values()].sort((a,b)=>a.number-b.number);}
 function machineFiltered(){const q=$('mq').value.trim().toLowerCase();let a=machines.filter(x=>!q||[x.code,x.maker,x.machine,x.certificationNo,x.certificationDeadline,x.deadlineSource,x.certType].some(v=>String(v??'').toLowerCase().includes(q)));const sort=$('msort').value;if(sort==='maker')a.sort((x,y)=>naturalCode(x.maker,y.maker)||naturalCode(x.code,y.code));else a.sort((x,y)=>naturalCode(x.code,y.code));return a;}
 function renderMachines(){const a=machineFiltered();$('mshown').textContent=a.length.toLocaleString('ja-JP');$('mmakers').textContent=new Set(a.map(x=>x.maker)).size.toLocaleString('ja-JP');$('mrows').innerHTML=a.length?a.map(x=>`<tr><td class="code">${esc(x.code)}</td><td>${esc(x.maker)}</td><td class="machine">${esc(x.machine)}</td><td>${esc(x.certificationNo||'-')}</td><td>${x.isCertified?'<span class="certmark" title="認定機">認</span>':'-'}</td><td title="${esc(x.deadlineSource)}">${esc(x.certificationDeadline||'-')}</td></tr>`).join(''):`<tr><td colspan="6" class="empty">${machines.length?'該当する機種はありません':'配置図Excelを添付してください'}</td></tr>`;}
@@ -561,8 +561,8 @@ function renderCertSummary(){
   if(!numbers.length){$('certSummaryRows').innerHTML='<tr><td colspan="7" class="empty">Excelファイルを添付してください</td></tr>';return}
   $('certSummaryRows').innerHTML=a.length?a.map(x=>{const dd=daysToDeadline(x.deadline);let judge='—',cls='';if(dd!==null&&dd<0){judge='期限切れ';cls='sb-exp'}else if(dd!==null&&dd<=92){judge='3か月以内';cls='sb-soon'}const type=x.isCertified?'<span class="statusbadge sb-rec">認定機</span>':'<span class="statusbadge sb-test">検定機</span>';const applied=isApplied(x);const apply=applied?`<button class="applybtn done" onclick="cancelApplied('${esc(applicationId(x))}')" title="クリックで申請済を取り消します">申請済<br><small>取消</small></button>`:((dd!==null&&dd>=0&&dd<=92)?`<button class="applybtn" onclick="markApplied('${esc(applicationId(x))}')">申請中</button>`:'—');return `<tr><td>${type}</td><td><div>${esc(x.maker)}</div><div class="machine">${esc(x.machine)}</div></td><td class="count">${x.count}</td><td>${esc(x.certificationNo||'-')}</td><td title="${esc(x.deadlineSource||'')}">${esc(x.deadline||'-')}</td><td>${cls?`<span class="statusbadge ${cls}">${judge}</span>`:judge}</td><td>${apply}</td></tr>`}).join(''):'<tr><td colspan="7" class="empty">該当する機種はありません</td></tr>';
 }
-async function loadLayout(file){try{$('status').className='status';$('status').textContent='読み込み・照合中…';const buf=await file.arrayBuffer();layoutWb=XLSX.read(buf,{type:'array',cellDates:false});numbers=extractNumbers(layoutWb);machines=extractMachines(layoutWb);enrichMachines();assignments=buildAssignments(layoutWb,machines);if(!numbers.length&&!machines.length)throw new Error('配置図データを検出できませんでした。');const matched=new Set(assignments.map(x=>x.number)).size;$('status').className='status ok';$('status').textContent=`読込完了：${file.name} ／ ${numbers.length.toLocaleString()}台`;$('stamp').textContent=`${file.name}：${matched.toLocaleString()}台照合`;updateBadge();renderMachines();renderNumbers();renderCertSummary();}catch(e){$('status').className='status err';$('status').textContent='エラー：'+(e.message||e);}}
-async function loadCert(file){try{$('certStatus').className='status';$('certStatus').textContent='期限資料を読み込み中…';const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array',cellDates:false});certRecords=extractCertRecords(wb);if(!certRecords.length)throw new Error('期限資料を検出できませんでした。');enrichMachines();$('certStatus').className='status ok';$('certStatus').textContent=`読込完了：${file.name} ／ ${certRecords.length.toLocaleString()}件`;updateBadge();renderMachines();renderNumbers();renderCertSummary();}catch(e){certRecords=[];$('certStatus').className='status err';$('certStatus').textContent='エラー：'+(e.message||e);}}
+async function loadLayout(file){try{$('status').className='status';$('status').textContent='読み込み・照合中…';const buf=await file.arrayBuffer();layoutWb=XLSX.read(buf,{type:'array',cellDates:false});numbers=extractNumbers(layoutWb);machines=extractMachines(layoutWb);enrichMachines();assignments=buildAssignments(layoutWb,machines);if(!numbers.length&&!machines.length)throw new Error('配置図データを検出できませんでした。');const matched=new Set(assignments.map(x=>x.number)).size;$('status').className='status ok';$('status').textContent=`読込完了：${file.name} ／ ${numbers.length.toLocaleString()}台`;$('stamp').textContent=`${file.name}：${matched.toLocaleString()}台照合`;updateBadge();renderMachines();renderNumbers();renderCertSummary();window.dispatchEvent(new CustomEvent('shindai-dataset-changed'));}catch(e){$('status').className='status err';$('status').textContent='エラー：'+(e.message||e);}}
+async function loadCert(file){try{$('certStatus').className='status';$('certStatus').textContent='期限資料を読み込み中…';const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array',cellDates:false});certRecords=extractCertRecords(wb);if(!certRecords.length)throw new Error('期限資料を検出できませんでした。');enrichMachines();$('certStatus').className='status ok';$('certStatus').textContent=`読込完了：${file.name} ／ ${certRecords.length.toLocaleString()}件`;updateBadge();renderMachines();renderNumbers();renderCertSummary();window.dispatchEvent(new CustomEvent('shindai-dataset-changed'));}catch(e){certRecords=[];$('certStatus').className='status err';$('certStatus').textContent='エラー：'+(e.message||e);}}
 function updateBadge(){if(!numbers.length){$('badge').textContent='配置図 未読込';return}const matched=new Set(assignments.map(x=>x.number)).size;const certMatched=machines.filter(x=>x.certificationNo||x.certificationDeadline).length;$('badge').textContent=`${matched}/${numbers.length}台 機種照合・期限${certMatched}機種`;}
 function setupDrop(id,inputId,loader){const drop=$(id);['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));drop.addEventListener('drop',e=>{const f=e.dataTransfer.files?.[0];if(f)loader(f)});$(inputId).addEventListener('change',e=>{const f=e.target.files?.[0];if(f)loader(f)});}
 setupDrop('drop','file',loadLayout);setupDrop('certDrop','certFile',loadCert);setupDrop('newDrop','newMachineFile',loadNewMachine);
@@ -930,12 +930,22 @@ window.onload=function(){
   const TRACKED_KEYS = new Set(Object.keys(CLOUD_DOC_BY_LOCAL_KEY));
   const LOCAL_KEY_BY_CLOUD_DOC = Object.fromEntries(Object.entries(CLOUD_DOC_BY_LOCAL_KEY).map(([k,v])=>[v,k]));
 
+  // Excelから読み込んだ解析済みデータもFirebaseへ保存する。
+  // Firestoreの1ドキュメント上限を避けるため、JSONを安全な大きさに分割してappStateへ保存する。
+  const DATASET_MANIFEST_DOC = 'shindai_loaded_dataset_manifest_v2';
+  const DATASET_CHUNK_PREFIX = 'shindai_loaded_dataset_chunk_v2_';
+  const DATASET_CHUNK_CHARS = 120000;
+
   let db=null;
   let cloudReady=false;
   let cloudApplying=false;
   let writeTimers={};
   let unsubscribers=[];
   let toastTimer=null;
+  let datasetSaving=false;
+  let datasetApplying=false;
+  let datasetManifestUnsubscribe=null;
+  let lastDatasetClientStamp='';
 
   const originalSetItem = Storage.prototype.setItem;
   const originalRemoveItem = Storage.prototype.removeItem;
@@ -1004,6 +1014,136 @@ window.onload=function(){
       if(key==='popOrderFormV1' && typeof loadPop==='function') loadPop();
     }catch(err){console.error('共有データの画面反映エラー',key,err);}
   }
+  function serializableCertRecords(){
+    return (certRecords||[]).map(c=>({
+      ...c,
+      g:c?.g instanceof Date ? c.g.toISOString() : (c?.g||null),
+      h:c?.h instanceof Date ? c.h.toISOString() : (c?.h||null)
+    }));
+  }
+  function datasetPayload(){
+    return {
+      schema:2,
+      numbers:Array.isArray(numbers)?numbers:[],
+      machines:Array.isArray(machines)?machines:[],
+      assignments:Array.isArray(assignments)?assignments:[],
+      certRecords:serializableCertRecords(),
+      newMachineRows:Array.isArray(newMachineRows)?newMachineRows:[],
+      savedAt:new Date().toISOString()
+    };
+  }
+  function reviveDate(v){
+    if(!v)return null;
+    const d=new Date(v);
+    return isNaN(d)?null:d;
+  }
+  function applyDatasetPayload(data){
+    if(!data || typeof data!=='object')return;
+    datasetApplying=true;
+    try{
+      numbers=Array.isArray(data.numbers)?data.numbers:[];
+      machines=Array.isArray(data.machines)?data.machines:[];
+      assignments=Array.isArray(data.assignments)?data.assignments:[];
+      certRecords=Array.isArray(data.certRecords)?data.certRecords.map(c=>({...c,g:reviveDate(c.g),h:reviveDate(c.h)})):[];
+      newMachineRows=Array.isArray(data.newMachineRows)?data.newMachineRows:[];
+      layoutWb=null;
+
+      if(numbers.length){
+        const matched=new Set(assignments.map(x=>x.number)).size;
+        if(byId('status')){byId('status').className='status ok';byId('status').textContent=`Firebaseから復元：${numbers.length.toLocaleString()}台`;}
+        if(byId('stamp'))byId('stamp').textContent=`Firebase共有データ：${matched.toLocaleString()}台照合`;
+      }
+      if(certRecords.length && byId('certStatus')){byId('certStatus').className='status ok';byId('certStatus').textContent=`Firebaseから復元：${certRecords.length.toLocaleString()}件`;}
+      if(newMachineRows.length && byId('newStatus')){byId('newStatus').className='status ok';byId('newStatus').textContent=`Firebaseから復元：${newMachineRows.length.toLocaleString()}機種`;}
+
+      if(typeof updateBadge==='function')updateBadge();
+      if(typeof renderMachines==='function')renderMachines();
+      if(typeof renderNumbers==='function')renderNumbers();
+      if(typeof renderCertSummary==='function')renderCertSummary();
+      if(typeof renderNewMachineCheck==='function')renderNewMachineCheck();
+      if(typeof renderDelivery==='function')renderDelivery();
+      if(typeof loadPop==='function')loadPop();
+    }finally{
+      datasetApplying=false;
+    }
+  }
+  async function readSharedDataset(){
+    if(!db)return false;
+    const manifestSnap=await db.collection('appState').doc(DATASET_MANIFEST_DOC).get();
+    if(!manifestSnap.exists)return false;
+    const manifest=manifestSnap.data()||{};
+    const count=Number(manifest.count||0);
+    if(!count || count<1)return false;
+    const promises=[];
+    for(let i=0;i<count;i++){
+      const id=DATASET_CHUNK_PREFIX+String(i).padStart(3,'0');
+      promises.push(db.collection('appState').doc(id).get());
+    }
+    const snaps=await Promise.all(promises);
+    let json='';
+    for(const snap of snaps){
+      if(!snap.exists)throw new Error('共有データの一部が見つかりません。');
+      json+=String((snap.data()||{}).part||'');
+    }
+    if(!json)return false;
+    const data=JSON.parse(json);
+    applyDatasetPayload(data);
+    return true;
+  }
+  async function saveSharedDataset(){
+    if(!cloudReady || !db || datasetApplying || datasetSaving)return;
+    datasetSaving=true;
+    try{
+      const payload=datasetPayload();
+      const json=JSON.stringify(payload);
+      // 何もExcelデータがない状態で既存の共有データを空に上書きしない。
+      if(!payload.numbers.length && !payload.machines.length && !payload.certRecords.length && !payload.newMachineRows.length)return;
+      const chunks=[];
+      for(let i=0;i<json.length;i+=DATASET_CHUNK_CHARS)chunks.push(json.slice(i,i+DATASET_CHUNK_CHARS));
+      const manifestRef=db.collection('appState').doc(DATASET_MANIFEST_DOC);
+      const old=await manifestRef.get();
+      const oldCount=old.exists?Number((old.data()||{}).count||0):0;
+      const batch=db.batch();
+      chunks.forEach((part,i)=>{
+        const id=DATASET_CHUNK_PREFIX+String(i).padStart(3,'0');
+        batch.set(db.collection('appState').doc(id),{part,index:i,app:'新台関連業務アプリ'});
+      });
+      for(let i=chunks.length;i<oldCount;i++){
+        const id=DATASET_CHUNK_PREFIX+String(i).padStart(3,'0');
+        batch.delete(db.collection('appState').doc(id));
+      }
+      lastDatasetClientStamp=new Date().toISOString();
+      batch.set(manifestRef,{
+        count:chunks.length,
+        schema:2,
+        app:'新台関連業務アプリ',
+        clientSavedAt:lastDatasetClientStamp,
+        updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await batch.commit();
+      setShareStatus('Firebase：全データ保存済み','ok');
+      showToast('全データを保存しました');
+    }catch(err){
+      console.error('Firebase dataset save error',err);
+      setShareStatus('Firebase：全データ保存エラー','ng');
+    }finally{
+      datasetSaving=false;
+    }
+  }
+  async function saveEverythingNow(){
+    if(!cloudReady || !db){setShareStatus('Firebase：まだ接続していません','ng');return;}
+    setShareStatus('Firebase：保存中…');
+    try{
+      for(const key of TRACKED_KEYS)await pushKey(key);
+      await saveSharedDataset();
+      setShareStatus('Firebase：全データ保存済み','ok');
+      showToast('全データを保存しました');
+    }catch(err){
+      console.error('Save all error',err);
+      setShareStatus('Firebase：保存エラー','ng');
+    }
+  }
+
   async function pushKey(key){
     if(!cloudReady || cloudApplying || !TRACKED_KEYS.has(key) || !db)return;
     const docId=CLOUD_DOC_BY_LOCAL_KEY[key];
@@ -1068,6 +1208,8 @@ window.onload=function(){
       }
 
       cloudReady=true;
+      // Excel解析済みデータも復元。これによりページを閉じても再読込不要。
+      try{await readSharedDataset();}catch(err){console.error('Firebase dataset load error',err);}
       hideGate(user);
 
       unsubscribers.forEach(fn=>{try{fn()}catch(e){}}); unsubscribers=[];
@@ -1086,6 +1228,14 @@ window.onload=function(){
         });
         unsubscribers.push(unsub);
       }
+      if(datasetManifestUnsubscribe){try{datasetManifestUnsubscribe()}catch(e){} datasetManifestUnsubscribe=null;}
+      datasetManifestUnsubscribe=db.collection('appState').doc(DATASET_MANIFEST_DOC).onSnapshot(async snap=>{
+        if(!cloudReady || datasetSaving || datasetApplying || !snap.exists)return;
+        const stamp=String((snap.data()||{}).clientSavedAt||'');
+        if(stamp && stamp===lastDatasetClientStamp)return;
+        try{await readSharedDataset();setShareStatus('Firebase：他端末のデータを反映','ok');}
+        catch(err){console.error('Firebase dataset realtime error',err);}
+      },err=>console.error('Firebase dataset watch error',err));
     }catch(err){
       console.error('Firebase shared connection error',err);
       cloudReady=false;
@@ -1119,6 +1269,7 @@ window.onload=function(){
     if(!confirm('この端末のFirebase認証を解除しますか？'))return;
     cloudReady=false;
     unsubscribers.forEach(fn=>{try{fn()}catch(e){}}); unsubscribers=[];
+    if(datasetManifestUnsubscribe){try{datasetManifestUnsubscribe()}catch(e){} datasetManifestUnsubscribe=null;}
     try{await firebase.auth().signOut()}catch(e){}
     showGate('端末認証を解除しました。');
   }
@@ -1132,11 +1283,14 @@ window.onload=function(){
       if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
       byId('firebaseLoginBtn')?.addEventListener('click',login);
       byId('firebaseLoginPassword')?.addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+      byId('firebaseSaveNowBtn')?.addEventListener('click',saveEverythingNow);
       byId('firebaseLogoutBtn')?.addEventListener('click',logout);
+      window.addEventListener('shindai-dataset-changed',()=>{if(cloudReady)saveSharedDataset();});
       firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
       firebase.auth().onAuthStateChanged(user=>{
         cloudReady=false;
         unsubscribers.forEach(fn=>{try{fn()}catch(e){}}); unsubscribers=[];
+        if(datasetManifestUnsubscribe){try{datasetManifestUnsubscribe()}catch(e){} datasetManifestUnsubscribe=null;}
         if(!user){showGate();return;}
         loadAndWatchSharedData(user);
       });
