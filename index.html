@@ -1,41 +1,878 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>認定機管理アプリ</title>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>新台関連業務アプリ</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
-:root{--blue:#175cd3;--navy:#102a56;--bg:#f3f6fb;--card:#fff;--red:#d92d20;--amber:#dc6803;--green:#067647;--text:#182230;--muted:#667085}
-*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Yu Gothic UI",sans-serif;background:var(--bg);color:var(--text)}
-header{background:linear-gradient(135deg,var(--navy),var(--blue));color:white;padding:18px 20px;position:sticky;top:0;z-index:10;box-shadow:0 4px 18px #102a5630}
-.head{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}.title{font-size:22px;font-weight:800}.sub{font-size:12px;opacity:.85;margin-top:3px}.date{font-size:13px;background:#ffffff20;padding:8px 12px;border-radius:999px}
-main{max-width:1200px;margin:auto;padding:18px}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.card{background:var(--card);border-radius:16px;padding:17px;box-shadow:0 2px 12px #10182812;border:1px solid #e4e7ec;cursor:pointer;transition:.15s}.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px #10182818}.card.active{outline:3px solid #84adff}.label{font-size:13px;color:var(--muted);font-weight:700}.num{font-size:30px;font-weight:850;margin-top:5px}.red .num{color:var(--red)}.amber .num{color:var(--amber)}
-.tools{margin-top:16px;background:white;border-radius:16px;padding:14px;display:flex;gap:10px;flex-wrap:wrap;box-shadow:0 2px 12px #10182810;border:1px solid #e4e7ec}.search{flex:1;min-width:230px;padding:12px 14px;border:1px solid #d0d5dd;border-radius:10px;font-size:15px}.select,.btn{padding:11px 13px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;font-size:14px}.btn{cursor:pointer;font-weight:700}.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
-.tabs{display:flex;gap:8px;overflow:auto;padding:15px 0 10px}.tab{white-space:nowrap;padding:10px 14px;border:1px solid #d0d5dd;background:white;border-radius:999px;cursor:pointer;font-weight:700;color:#344054}.tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
-.summary{font-size:14px;color:var(--muted);margin:6px 2px 10px}.tablebox{background:white;border-radius:16px;overflow:auto;box-shadow:0 2px 12px #10182810;border:1px solid #e4e7ec}table{border-collapse:collapse;width:100%;min-width:1050px}th{background:#f8fafc;color:#475467;text-align:left;font-size:12px;padding:12px;border-bottom:1px solid #e4e7ec;position:sticky;top:0}td{padding:12px;border-bottom:1px solid #eef2f6;font-size:13px;vertical-align:top}tr:hover td{background:#f9fbff}.machine{font-weight:750}.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800}.b-rec{background:#e8f1ff;color:#175cd3}.b-app{background:#fff3e0;color:#b54708}.b-test{background:#e8f7ef;color:#067647}.b-exp{background:#fee4e2;color:#b42318}.b-soon{background:#fff6d8;color:#b54708}.empty{text-align:center;padding:48px;color:var(--muted)}
-.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:50}.modal.show{display:flex}.dialog{background:white;border-radius:18px;width:min(780px,100%);max-height:90vh;overflow:auto;padding:20px}.dialog h2{margin-top:0}.dialog textarea{width:100%;height:260px;border:1px solid #d0d5dd;border-radius:10px;padding:12px;font-family:monospace}.hint{font-size:13px;color:var(--muted);line-height:1.7}.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
-@media(max-width:850px){.cards{grid-template-columns:repeat(2,1fr)}.cards .card:last-child{grid-column:span 2}.head{align-items:flex-start}.date{display:none}main{padding:12px}.title{font-size:19px}}
-</style></head><body>
-<header><div class="head"><div><div class="title">認定機管理アプリ</div><div class="sub">パチンコ・スロット一括管理</div></div><div class="date">判定日：2026年7月18日</div></div></header>
-<main>
-<section class="cards" id="cards"></section>
-<section class="tools"><input id="search" class="search" placeholder="機種名・メーカー・番号で検索"><select id="type" class="select"><option value="">全種別</option><option>パチンコ</option><option>スロット</option></select><select id="sort" class="select"><option value="valid">有効期限が近い順</option><option value="cert">認定期限が近い順</option><option value="name">機種名順</option></select><button class="btn" onclick="openImport()">Excel貼り付け更新</button><button class="btn primary" onclick="downloadCSV()">表示中をCSV出力</button></section>
-<nav class="tabs" id="tabs"></nav><div class="summary" id="summary"></div>
-<div class="tablebox"><table><thead><tr><th>区分</th><th>種別</th><th>メーカー／機種名</th><th>台数</th><th>検定・認定年月日</th><th>E/N 有効期限</th><th>3か月前</th><th>F/O 認定期限</th><th>番号</th><th>判定</th></tr></thead><tbody id="body"></tbody></table></div>
-</main>
-<div class="modal" id="modal"><div class="dialog"><h2>Excel貼り付け更新</h2><p class="hint">Excelの表をコピーして貼り付けてください。パチンコ側（A～H列）とスロット側（J～Q列）の両方に対応します。ブラウザ内だけで更新され、元のExcelは変更しません。</p><textarea id="paste" placeholder="Excelからコピーした表をここへ貼り付け"></textarea><div class="actions"><button class="btn" onclick="closeImport()">キャンセル</button><button class="btn primary" onclick="importPaste()">全更新</button></div></div></div>
+:root{--bg:#f3f6fb;--card:#fff;--text:#162033;--muted:#667085;--line:#d8e0eb;--blue:#2457d6;--blue2:#1846ba;--green:#087443;--greenbg:#eafaf1;--orange:#b54708;--orangebg:#fff6ed;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:1280px;margin:auto;padding:24px}header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}h1{font-size:30px;margin:0}.sub{font-size:14px;color:var(--muted);margin-top:6px}.badge{background:#e8efff;color:#1746a2;padding:9px 14px;border-radius:999px;font-weight:800;white-space:nowrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 5px 18px rgba(16,24,40,.05)}
+.upload{border:2px dashed #99b4e9;border-radius:14px;background:#f8fbff;padding:22px;text-align:center}.upload.drag{background:#edf4ff;border-color:var(--blue)}.upload h2{margin:0 0 7px;font-size:20px}.upload p{margin:0 0 14px;font-size:13px;color:var(--muted)}.filebtn{display:inline-flex;height:44px;padding:0 19px;align-items:center;border-radius:10px;background:var(--blue);color:white;font-weight:800;cursor:pointer}.filebtn:hover{background:var(--blue2)}#file,#certFile,#newMachineFile{display:none}.status{margin-top:12px;font-size:13px;font-weight:800}.ok{color:var(--green)}.err{color:var(--red)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}.tab{border:1px solid var(--line);background:#fff;color:#344054;height:42px;padding:0 18px;border-radius:10px;font-weight:800;cursor:pointer}.tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.controls{display:grid;grid-template-columns:2fr 1fr 1fr auto auto;gap:10px;align-items:end}label{display:block;margin-bottom:6px;font-size:12px;color:var(--muted);font-weight:800}input,select,button{height:42px;border:1px solid #cbd5e1;border-radius:10px;font:inherit}input,select{width:100%;padding:0 12px;background:white}button{padding:0 15px;background:white;cursor:pointer;font-weight:800}button.good{color:var(--green);background:var(--greenbg);border-color:#a7e3c1}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fbfcfe}.stat small{color:var(--muted)}.stat strong{display:block;margin-top:4px;font-size:23px}
+.certcards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.certcard{background:#fff;border:1px solid var(--line);border-radius:16px;padding:17px;cursor:pointer;box-shadow:0 2px 12px rgba(16,24,40,.06);transition:.15s}.certcard:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(16,24,40,.10)}.certcard.active{outline:3px solid #84adff}.certcard .clabel{font-size:13px;color:var(--muted);font-weight:800}.certcard .cnum{font-size:31px;font-weight:900;margin-top:5px}.certcard.rec .cnum{color:var(--blue)}.certcard.test .cnum{color:var(--green)}.certcard.soon .cnum{color:var(--orange)}.certcard.exp .cnum{color:var(--red)}.statusbadge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:900}.sb-rec{background:#e8f1ff;color:#175cd3}.sb-test{background:#e8f7ef;color:#067647}.sb-soon{background:#fff6d8;color:#b54708}.sb-exp{background:#fee4e2;color:#b42318}.applybtn{padding:7px 12px;border:1px solid #f79009;border-radius:9px;background:#fff6d8;color:#b54708;font-weight:800;cursor:pointer}.applybtn:hover{background:#ffedb5}.applybtn.done{border-color:#12b76a;background:#ecfdf3;color:#067647;cursor:default}.certtoolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.certtoolbar input{flex:1;min-width:240px}.certsummary{font-size:14px;color:var(--muted);margin-top:10px}
+.tablebox{overflow:auto;max-height:640px;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}th,td{padding:11px 13px;border-bottom:1px solid #edf1f5;text-align:left;vertical-align:middle}th{position:sticky;top:0;background:#f8fafc;z-index:2;font-size:13px}.code{font-weight:900;color:#1746a2}.count{font-weight:900;font-size:17px}.machine{font-weight:700}tr:hover td{background:#f8fbff}.empty{padding:42px;text-align:center;color:var(--muted)}.footerline{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px;font-size:13px;color:var(--muted)}.pill{background:#f2f4f7;padding:4px 8px;border-radius:999px;color:#475467}.note{padding:11px 13px;border-radius:10px;background:var(--orangebg);color:var(--orange);font-size:13px;font-weight:700;margin-top:12px}.certmark{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:2px solid #2457d6;border-radius:50%;font-weight:900;color:#1846ba;line-height:1}.hidden{display:none!important}
+@media(max-width:850px){.uploadgrid{grid-template-columns:1fr!important}header{flex-direction:column;align-items:flex-start}.controls{grid-template-columns:1fr 1fr}.controls>.wide{grid-column:1/-1}.stats{grid-template-columns:1fr 1fr}.certcards{grid-template-columns:1fr 1fr}}
+</style>
+
+<style id="a4-check-print">
+@media print {
+  body.print-check * { visibility: hidden !important; }
+  body.print-check #checkPanel,
+  body.print-check #checkPanel * { visibility: visible !important; }
+
+  body.print-check #checkPanel {
+    display:block !important;
+    position:absolute !important;
+    left:0 !important;
+    top:0 !important;
+    width:277mm !important;
+    margin:0 !important;
+    padding:0 !important;
+    background:#fff !important;
+  }
+
+  body.print-check #checkPanel .card {
+    margin:0 !important;
+    padding:0 !important;
+    border:0 !important;
+    box-shadow:none !important;
+  }
+
+  body.print-check #checkPanel .toolbar {
+    display:block !important;
+    margin:0 0 5mm 0 !important;
+    padding:0 !important;
+  }
+
+  body.print-check #checkPanel .toolbar .actions,
+  body.print-check #checkPanel .muted {
+    display:none !important;
+  }
+
+  body.print-check #checkPanel .toolbar strong {
+    display:block !important;
+    font-size:15pt !important;
+    text-align:center !important;
+    margin:0 0 4mm 0 !important;
+  }
+
+  body.print-check #checkPanel .tablebox {
+    overflow:visible !important;
+    border:0 !important;
+  }
+
+  body.print-check #checkPanel table {
+    width:100% !important;
+    table-layout:fixed !important;
+    border-collapse:collapse !important;
+    font-size:10pt !important;
+  }
+
+  body.print-check #checkPanel th,
+  body.print-check #checkPanel td {
+    padding:2mm 1mm !important;
+    border:1px solid #000 !important;
+  }
+
+  body.print-check #checkPanel select {
+    border:0 !important;
+    appearance:none !important;
+    -webkit-appearance:none !important;
+    background:transparent !important;
+    font-size:10pt !important;
+  }
+
+  body.print-check #checkPanel input[type="checkbox"] {
+    width:4mm !important;
+    height:4mm !important;
+  }
+}
+</style>
+
+<style id="numbers-print-style">
+@media print {
+  body.print-numbers * { visibility:hidden !important; display:none !important; }
+
+  body.print-numbers #numberPrintTable {
+    display:table !important;
+    visibility:visible !important;
+    position:absolute !important;
+    left:0 !important;
+    top:0 !important;
+    width:190mm !important;
+    min-width:0 !important;
+    margin:0 !important;
+    padding:0 !important;
+    table-layout:fixed !important;
+    border-collapse:collapse !important;
+    font-size:9.5pt !important;
+    background:#fff !important;
+  }
+
+  body.print-numbers #numberPrintTable thead { display:table-header-group !important; visibility:visible !important; }
+  body.print-numbers #numberPrintTable tbody { display:table-row-group !important; visibility:visible !important; }
+  body.print-numbers #numberPrintTable tr { display:table-row !important; visibility:visible !important; page-break-inside:avoid !important; }
+  body.print-numbers #numberPrintTable th,
+  body.print-numbers #numberPrintTable td {
+    display:table-cell !important;
+    visibility:visible !important;
+    padding:1.7mm 1.2mm !important;
+    border-bottom:.4pt solid #bbb !important;
+    line-height:1.25 !important;
+    word-break:break-word !important;
+    overflow-wrap:anywhere !important;
+    white-space:normal !important;
+  }
+
+  body.print-numbers #numberPrintTable th {
+    font-size:9pt !important;
+    background:#f3f4f6 !important;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  body.print-numbers #numberPrintTable th:nth-child(1),
+  body.print-numbers #numberPrintTable td:nth-child(1){width:16mm !important;text-align:center !important;}
+  body.print-numbers #numberPrintTable th:nth-child(2),
+  body.print-numbers #numberPrintTable td:nth-child(2){width:28mm !important;}
+  body.print-numbers #numberPrintTable th:nth-child(3),
+  body.print-numbers #numberPrintTable td:nth-child(3){width:78mm !important;}
+  body.print-numbers #numberPrintTable th:nth-child(4),
+  body.print-numbers #numberPrintTable td:nth-child(4){width:28mm !important;}
+  body.print-numbers #numberPrintTable th:nth-child(5),
+  body.print-numbers #numberPrintTable td:nth-child(5){width:14mm !important;text-align:center !important;}
+  body.print-numbers #numberPrintTable th:nth-child(6),
+  body.print-numbers #numberPrintTable td:nth-child(6){width:26mm !important;}
+}
+</style>
+
+<style id="cool-ui-theme">
+:root{
+  --bg:#0b1220;
+  --panel:#111a2b;
+  --panel2:#162238;
+  --line:#26344f;
+  --text:#eef4ff;
+  --muted:#9fb0c9;
+  --blue:#2f6df6;
+  --blue2:#1d4ed8;
+  --gold:#d6a63a;
+  --gold2:#f2cf73;
+  --green:#16a36a;
+  --red:#e05252;
+  --shadow:0 14px 34px rgba(0,0,0,.28);
+}
+body{
+  background:
+    radial-gradient(circle at 10% 0%,rgba(47,109,246,.16),transparent 28%),
+    radial-gradient(circle at 90% 0%,rgba(214,166,58,.10),transparent 24%),
+    linear-gradient(180deg,#0a1020 0%,#0d1526 100%) !important;
+  color:var(--text)!important;
+}
+.wrap{max-width:1360px!important}
+header{
+  padding:8px 0 4px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+h1{
+  letter-spacing:.02em;
+  background:linear-gradient(90deg,#fff,#dbe8ff 55%,#f2cf73);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 4px 24px rgba(47,109,246,.10)
+}
+.sub,.muted,.note,.footerline{color:var(--muted)!important}
+.badge{
+  background:linear-gradient(135deg,#1e3a8a,#1d4ed8)!important;
+  color:#fff!important;
+  border:1px solid #4775ef!important;
+  box-shadow:0 8px 20px rgba(29,78,216,.28);
+}
+.card{
+  background:linear-gradient(180deg,rgba(22,34,56,.96),rgba(17,26,43,.96))!important;
+  border:1px solid var(--line)!important;
+  box-shadow:var(--shadow)!important;
+  border-radius:18px!important;
+}
+.upload{
+  background:linear-gradient(180deg,rgba(24,40,67,.92),rgba(15,27,48,.92))!important;
+  border:1px dashed #5274ad!important;
+}
+.upload:hover{border-color:var(--gold)!important}
+.filebtn,.good,.btn.primary{
+  background:linear-gradient(135deg,#2f6df6,#1d4ed8)!important;
+  border:1px solid #4e7cf5!important;
+  color:#fff!important;
+  box-shadow:0 8px 18px rgba(47,109,246,.24)!important;
+}
+.filebtn:hover,.good:hover,.btn.primary:hover{filter:brightness(1.08)}
+.tab{
+  background:#121d31!important;
+  color:#cbd7ea!important;
+  border:1px solid #2b3b59!important;
+}
+.tab:hover{border-color:#5675a6!important}
+.tab.active{
+  background:linear-gradient(135deg,#d6a63a,#b88320)!important;
+  color:#101623!important;
+  border-color:#e5bb59!important;
+  box-shadow:0 8px 18px rgba(214,166,58,.18)!important;
+}
+input,select,textarea{
+  background:#0e1727!important;
+  color:#eef4ff!important;
+  border:1px solid #334563!important;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:#5d83f7!important;
+  box-shadow:0 0 0 3px rgba(47,109,246,.14)!important;
+  outline:none!important;
+}
+button{
+  border-radius:10px!important;
+  transition:.15s ease!important;
+}
+button:hover{transform:translateY(-1px)}
+.stat{
+  background:linear-gradient(180deg,#132038,#101a2d)!important;
+  border:1px solid #2b3b59!important;
+}
+.stat small{color:#8fa3c1!important}
+.stat strong{color:#f7fbff!important}
+.tablebox{
+  background:#0f1828!important;
+  border:1px solid #253450!important;
+  border-radius:14px!important;
+}
+table{color:#eaf1fb!important}
+th{
+  background:linear-gradient(180deg,#1b2941,#162238)!important;
+  color:#cdd8e8!important;
+  border-bottom:1px solid #344563!important;
+}
+td{
+  border-bottom:1px solid #202d44!important;
+}
+tbody tr:hover td{background:#14223a!important}
+.certcard{
+  background:linear-gradient(180deg,#18243a,#121c2f)!important;
+  border:1px solid #2d3d5a!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.18)!important;
+}
+.certcard .clabel{color:#9fb0c9!important}
+.certcard .cnum{color:#fff!important}
+.certcard.rec{border-color:#b98a2d!important}
+.certcard.test{border-color:#2f6df6!important}
+.certcard.soon{border-color:#d67b2a!important}
+.applybtn{
+  background:linear-gradient(135deg,#d6a63a,#b88320)!important;
+  color:#111827!important;
+  border:1px solid #e4b951!important;
+  font-weight:800!important;
+}
+.applybtn.done{
+  background:linear-gradient(135deg,#16a36a,#0f7d50)!important;
+  color:#fff!important;
+  border-color:#2abb80!important;
+}
+.pill{
+  background:#1a2a44!important;
+  color:#d8e5f9!important;
+  border:1px solid #32486b!important;
+}
+.status.ok{color:#43d89a!important}
+.status.err{color:#ff7777!important}
+.checktable select{
+  background:#0f1828!important;
+}
+@media print{
+  body{background:#fff!important;color:#111!important}
+}
+</style>
+
+<style id="pop-name-edit-fix">
+#popRequester,#popApplicant{
+  pointer-events:auto !important;
+  user-select:text !important;
+  -webkit-user-select:text !important;
+  cursor:text !important;
+  opacity:1 !important;
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+</head>
+<body><div class="wrap">
+<header><div><h1>新台関連業務アプリ</h1><div class="sub">配置図Excelと検定・認定期限Excelを読み込み、台番号ごとに機種名・検定番号・有効期限を照合して表示します。</div></div><div class="badge" id="badge">データ未読込</div></header>
+
+<div class="card"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px" class="uploadgrid">
+<div class="upload" id="drop"><h2>① 配置図Excel</h2><p>台番号・記号・メーカー・機種名が入った配置図を選択します。</p><label class="filebtn" for="file">配置図Excelを選択</label><input id="file" type="file" accept=".xlsx,.xls,.xlsm,.csv"><div class="status" id="status">未読込</div></div>
+<div class="upload" id="certDrop"><h2>② 検定・認定期限Excel</h2><p>C列＝検定機・認定機、D列＝メーカー、E列＝型式名、G列＝検定期限、H列＝認定期限、I列＝検定番号</p><label class="filebtn" for="certFile">期限Excelを選択</label><input id="certFile" type="file" accept=".xlsx,.xls,.xlsm,.csv"><div class="status" id="certStatus">未読込</div></div>
+<div class="upload" id="newDrop"><h2>③ 新台チェック表Excel</h2><p>【新台】欄を探し、D列の型式名をチェック表へ抽出します。</p><label class="filebtn" for="newMachineFile">新台データを選択</label><input id="newMachineFile" type="file" accept=".xlsx,.xls,.xlsm,.csv"><div class="status" id="newStatus">未読込</div></div>
+</div><div class="note" style="margin-top:14px">期限の採用ルール：現在日がG列の検定期限を過ぎている場合はH列（認定期限）を表示し、それ以外はG列を表示します。C列が「認定機」の機種には、丸囲みの「認」を表示します。</div></div>
+
+<div class="card"><div class="tabs"><button class="tab active" id="tabNumbers">台番号・機種一覧</button><button class="tab" id="tabMachines">機種マスタ</button><button class="tab" id="tabCert">検定・認定</button><button class="tab" id="tabCheck">チェック表</button><button class="tab" id="tabPop">POP発注書</button><button class="tab" id="tabDelivery">新台納品確認書</button></div></div>
+
+
+<div id="certPane" class="hidden">
+<div class="card">
+  <div class="certcards">
+    <div class="certcard rec active" data-certfilter="all"><div class="clabel">判定済み合計</div><div class="cnum" id="classifiedCount">0<small style="font-size:13px">台</small></div></div>
+    <div class="certcard rec" data-certfilter="認定機"><div class="clabel">認定機</div><div class="cnum" id="certifiedCount">0<small style="font-size:13px">台</small></div></div>
+    <div class="certcard test" data-certfilter="検定機"><div class="clabel">検定機</div><div class="cnum" id="inspectionCount">0<small style="font-size:13px">台</small></div></div>
+    <div class="certcard rec" data-certfilter="申請済"><div class="clabel">申請済</div><div class="cnum" id="appliedCount">0<small style="font-size:13px">台</small></div></div>
+    <div class="certcard soon" data-certfilter="3か月前対象"><div class="clabel">期限3か月以内</div><div class="cnum" id="soonCount">0<small style="font-size:13px">台</small></div></div>
+  </div>
+  <div class="note">カードを押すと、その区分だけに絞り込んで機種ごとの台数を表示します。</div>
+</div>
+<div class="card">
+  <div class="certtoolbar"><input id="certSearch" placeholder="機種名・メーカー・検定番号で検索"><button id="certReset">条件クリア</button><button id="certCsv" class="good">表示中をCSV出力</button></div>
+  <div class="certsummary" id="certViewSummary">0機種を表示（総台数 0台）</div>
+</div>
+<div class="card">
+  <div class="tablebox"><table><thead><tr><th style="width:110px">区分</th><th>メーカー／機種名</th><th style="width:90px">台数</th><th style="width:150px">検定番号</th><th style="width:150px">検定・認定期限</th><th style="width:130px">判定</th><th style="width:120px">申請状況</th></tr></thead><tbody id="certSummaryRows"><tr><td colspan="7" class="empty">Excelファイルを添付してください</td></tr></tbody></table></div>
+</div>
+</div>
+
+<div id="machinePane" class="hidden">
+<div class="card"><div class="controls" style="grid-template-columns:2fr 1fr auto auto"><div class="wide"><label>検索（記号・メーカー・機種名・検定番号・期限）</label><input id="mq" placeholder="例：a1 / 三洋物産 / 大海物語"></div><div><label>並び順</label><select id="msort"><option value="code">記号順</option><option value="maker">メーカー順</option></select></div><button id="mreset">条件クリア</button><button id="mcsv" class="good">CSV出力</button></div></div>
+<div class="card"><div class="stats"><div class="stat"><small>表示機種数</small><strong id="mshown">0</strong></div><div class="stat"><small>メーカー数</small><strong id="mmakers">0</strong></div><div class="stat"><small>検定番号</small><strong style="font-size:18px">I列</strong></div><div class="stat"><small>期限</small><strong style="font-size:18px">G→H列</strong></div></div></div>
+<div class="card"><div class="tablebox"><table><thead><tr><th style="width:90px">記号</th><th style="width:180px">メーカー</th><th>機種名</th><th style="width:160px">検定番号</th><th style="width:90px">区分</th><th style="width:150px">検定期限</th></tr></thead><tbody id="mrows"><tr><td colspan="7" class="empty">Excelファイルを添付してください</td></tr></tbody></table></div><div class="note" id="example">表示：記号 ｜ メーカー ｜ 機種名 ｜ 検定番号（I列）｜ 区分（C列）｜ 期限（G列、期限切れならH列）</div></div>
+</div>
+
+<div id="numberPane">
+<div class="card"><div class="controls"><div class="wide"><label>検索（台番号・メーカー・機種名・検定番号・検定期限）</label><input id="q" placeholder="例：1757 / 三洋物産 / 大海物語 / 検定番号"></div><div><label>開始番号</label><input id="min" inputmode="numeric" placeholder="最小"></div><div><label>終了番号</label><input id="max" inputmode="numeric" placeholder="最大"></div><button id="reset">条件クリア</button><button id="csv" class="good">CSV出力</button><button id="numbersPrint" class="good">印刷</button></div></div>
+<div class="card"><div class="stats"><div class="stat"><small>表示件数</small><strong id="shown">0</strong></div><div class="stat"><small>照合済み</small><strong id="matched">0台</strong></div><div class="stat"><small>未照合</small><strong id="unmatched">0台</strong></div><div class="stat"><small>並び順</small><strong style="font-size:18px"><select id="order"><option value="asc">台番号 昇順</option><option value="desc">台番号 降順</option></select></strong></div></div></div>
+<div class="card"><div class="tablebox"><table id="numberPrintTable"><thead><tr><th style="width:110px">台番号</th><th style="width:180px">メーカー</th><th>機種名</th><th style="width:160px">検定番号</th><th style="width:90px">区分</th><th style="width:150px">検定期限</th></tr></thead><tbody id="rows"><tr><td colspan="7" class="empty">Excelファイルを添付してください</td></tr></tbody></table></div><div class="footerline"><span>※ 配置図のメーカー・機種名を期限資料と照合。I列を検定番号、C列が認定機なら「認」を丸囲み表示し、期限はG列を基本として期限切れの場合はH列を表示します。</span><span class="pill" id="stamp">未読込</span></div></div>
+</div>
+</div>
+
+
+<div id="deliveryPanel" class="hidden">
+  <div class="card">
+    <div class="toolbar"><div><strong style="font-size:22px">新台納品確認書</strong><div class="muted">新台チェック表Excelの【新台】データから機種名を自動反映します。</div></div><div class="actions"><button class="btn primary" id="deliveryExcel">Excel出力</button></div></div>
+    <div class="delivery-meta">
+      <label>宛先
+        <select id="deliveryTo">
+          <option value="飛鳥運輸">飛鳥運輸</option>
+          <option value="清興運輸">清興運輸</option>
+        </select>
+      </label>
+      <label>日付<input id="deliveryDate" type="date"></label>
+      <label>件名<input id="deliverySubject" type="text" placeholder="件名を入力"></label>
+      <label>氏名<input id="deliveryName" type="text" value="長友　鉄也" placeholder="氏名"></label>
+    </div>
+  </div>
+  <div class="card delivery-sheet">
+    <div class="delivery-store">〒880-0123<br>宮崎市大字芳士字祝田975番地１<br><strong>モナコパレスゴールド</strong><br>TEL　0985-77-8182　　FAX　0985-77-8183</div>
+    <p>お世話になっております。</p>
+    <p><span id="deliveryTextDate">設置日</span> の当店の設置予定機種一覧です。ご確認後、ご返送を宜しくお願い致します。</p>
+    <div class="tablebox"><table class="delivery-table"><thead><tr><th>機種名</th><th>メーカー</th><th>本体</th><th>板</th><th>運送会社確認</th><th>納品日</th></tr></thead><tbody id="deliveryRows"></tbody></table></div>
+  </div>
+</div>
+<style id="delivery-style">
+.delivery-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}.delivery-meta label{font-size:12px;color:var(--muted);font-weight:700}.delivery-meta input,.delivery-meta select{display:block;width:100%;margin-top:6px}.delivery-sheet{border-top:3px solid var(--gold)!important}.delivery-store{text-align:right;line-height:1.7;margin-bottom:18px}.delivery-table th,.delivery-table td{text-align:center}.delivery-table td:first-child{text-align:left;font-weight:700}.delivery-table input,.delivery-table select{width:100%}
+@media(max-width:850px){.delivery-meta{grid-template-columns:1fr 1fr}}
+</style>
+<div id="popPanel" class="hidden">
+  <div class="card">
+    <div class="toolbar">
+      <div>
+        <strong style="font-size:22px">新台入替POP発注書</strong>
+        <div class="muted">添付いただいた「新台POP発注表」のひな形をアプリ内で入力できるようにした画面です。</div>
+      </div>
+      <div class="actions"><button class="btn" id="popAdd">機種行を追加</button><button class="btn" id="popPrint">Excel出力</button><button class="btn secondary" id="popReset">入力クリア</button></div>
+    </div>
+    <div class="popmeta">
+      <label>依頼日<input type="date" id="popRequestDate"></label>
+      <label>依頼人<input type="text" id="popRequester" value="長友　鉄也" placeholder="依頼人" autocomplete="off"></label>
+      <label>開店日<input type="date" id="popOpenDate"></label>
+      <label>店舗名<input id="popStore" value="ゴールド"></label><label>依頼者<input type="text" id="popApplicant" value="長友　鉄也" placeholder="依頼者" autocomplete="off"></label>
+    </div>
+  </div>
+
+  <div class="card popsheet">
+    <div class="popnotice">今回の新台機種（全台）・導入場所〈1円・4円・10S・20S〉を記入　※必要なPOPに枚数を入力してください。</div>
+    <div class="tablebox">
+      <table class="poptable">
+        <thead><tr><th>機種名</th><th>1・4・10S・20S</th><th>枚数</th><th>台数</th><th></th></tr></thead>
+        <tbody id="popRows"></tbody>
+      </table>
+    </div>
+
+    <div class="popsection">●幕板 〈パチンコ / タイプ別A4〉 〈スロット / タイプ別A4〉</div>
+    <div class="popsection">●リーチ B5 パウチ無</div>
+    <div class="popsection">バックライト島帯　バックライト紙（W148×H415）</div>
+    <div class="popmini"><label>島帯 <input type="number" min="0" id="popShimatai" placeholder="枚数"></label><label><input type="checkbox" id="popShimataiRev"> 逆順</label></div>
+    <div class="popmini"><label>ビグモミミ <input type="number" min="0" id="popBigmo" placeholder="枚数"></label><label><input type="checkbox" id="popBigmoRev"> 逆順</label></div>
+
+    <div class="popnote">※配置図のエクセルデータをメールで送って下さい</div>
+    <div class="popposters">
+      <div><strong>最新導入ポスター</strong><label>A1縦 <input type="number" min="0" id="posterA1" value="1">枚</label><label>B2縦 <input type="number" min="0" id="posterB2v" value="4">枚</label><label>B0横 <input type="number" min="0" id="posterB0h" value="1">枚</label></div>
+      <div><strong>機種インフォ</strong><label>B2横 <input type="number" min="0" id="infoB2h" value="4">枚</label><label>B0横 <input type="number" min="0" id="infoB0h" value="2">枚</label></div>
+      <div><strong>導入予定ポスター</strong><label>A1縦 <input type="number" min="0" id="planA1" value="1">枚</label><label>B0横 <input type="number" min="0" id="planB0h" value="1">枚</label></div>
+    </div>
+  </div>
+</div>
+<style id="pop-order-style">
+.popmeta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}.popmeta label,.popposters label{font-size:12px;color:var(--muted);font-weight:700}.popmeta input{display:block;width:100%;margin-top:6px}
+.popsheet{border-top:3px solid var(--gold)!important}.popnotice{padding:12px 14px;border:1px solid #40506b;border-radius:10px;margin-bottom:14px;font-weight:700}
+.poptable th,.poptable td{text-align:center}.poptable td:first-child{text-align:left}.poptable input,.poptable select{width:100%;min-width:70px}
+.popsection{padding:11px 12px;border-bottom:1px solid #31415e;font-weight:800}.popmini{display:flex;gap:22px;align-items:center;padding:12px}.popmini input[type=number]{width:90px}
+.popnote{margin:18px 0 12px;font-weight:800}.popposters{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.popposters>div{border:1px solid #31415e;border-radius:12px;padding:14px}.popposters strong{display:block;margin-bottom:10px;color:var(--gold2)}.popposters label{display:flex;justify-content:space-between;align-items:center;margin:7px 0}.popposters input{width:70px}
+@media(max-width:800px){.popmeta,.popposters{grid-template-columns:1fr 1fr}}
+</style>
+<div id="checkPanel" class="hidden"><div class="card"><div class="toolbar"><div><strong>遊技台説明書・設置遊技確認書チェック表</strong><div class="muted">③の新台チェック表Excelから「【新台】」欄のD列（型式名）を抽出して表示します。</div></div><div class="actions"><button class="btn" id="checkAdd">行を追加</button><button class="btn" id="checkPrint">印刷</button><button class="btn secondary" id="checkReset">チェック解除</button></div></div><div class="tablebox"><table class="checktable"><thead><tr><th>P/S</th><th>区分</th><th>機種名</th><th>台数</th><th>検定書</th><th>種類</th><th>運送</th><th>納品</th><th>説明書</th><th>コピー</th><th>釘シート</th></tr></thead><tbody id="checkRows"></tbody></table></div></div></div><style>.checktable th,.checktable td{text-align:center;vertical-align:middle}.checktable td.mname{text-align:left;font-weight:700}.ck{width:22px;height:22px}.editcell{background:#fffdf3;min-width:70px}@media print{header,.uploads,.tabs,.toolbar .actions,#numbersPanel,#machinesPanel,#certPanel{display:none!important}#checkPanel{display:block!important}.card{box-shadow:none;border:none}}</style><script>
+let numbers=[];let machines=[];let assignments=[];let certRecords=[];let layoutWb=null;
+const $=id=>document.getElementById(id);
+const txt=v=>v==null?'':String(v).trim();
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function naturalCode(a,b){return String(a).localeCompare(String(b),'ja',{numeric:true,sensitivity:'variant'});}
+function isMachineNumber(v){if(typeof v==='string')v=v.replace(/,/g,'').trim();const n=Number(v);return Number.isInteger(n)&&n>0&&n<=9999?n:null;}
+function norm(v){return txt(v).normalize('NFKC').toUpperCase().replace(/[\s　・･－―ｰ〜～~\-]/g,'').replace(/[^0-9A-Zぁ-んァ-ヶ一-龯]/g,'');}
+function dateFromCell(cell){if(!cell||cell.v==null||cell.v==='')return null;if(cell.v instanceof Date)return new Date(cell.v.getFullYear(),cell.v.getMonth(),cell.v.getDate());if(typeof cell.v==='number'){const d=XLSX.SSF.parse_date_code(cell.v);if(d)return new Date(d.y,d.m-1,d.d);}const s=txt(cell.w||cell.v);let m=s.match(/(\d{4})[\/年.-](\d{1,2})[\/月.-](\d{1,2})/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);return null;}
+function fmtDate(d){if(!d||isNaN(d))return '';return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;}
+function today0(){const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+let newMachineRows=[];
+function extractNewMachineRows(wb){
+  const out=[];
+  for(const sn of wb.SheetNames){
+    const ws=wb.Sheets[sn]; if(!ws||!ws['!ref'])continue;
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    for(let r=0;r<rows.length;r++){
+      const c=txt(rows[r]?.[2]);
+      if(!(c.includes('【新台】')||c==='新台'))continue;
+      let blankRun=0;
+      for(let rr=r+1;rr<rows.length;rr++){
+        const row=rows[rr]||[];
+        const sec=txt(row[2]);
+        if(rr>r+1 && sec.includes('【') && sec.includes('】'))break;
+        const ps=txt(row[2]), machine=txt(row[3]), status=txt(row[1]);
+        const certNo=txt(row[4]), count=txt(row[7]), machineNo=txt(row[10]);
+        if(!ps&&!machine&&!status&&!certNo&&!count&&!machineNo){if(++blankRun>=5)break;continue}
+        blankRun=0;
+        if(ps==='遊技機区分'||machine==='型式名')continue;
+        if((ps==='P'||ps==='S')&&machine)out.push({ps,status,machine,certNo,count,machineNo});
+      }
+    }
+  }
+  const seen=new Set();
+  return out.filter(x=>{const k=[x.ps,x.machine,x.certNo,x.machineNo].join('|');if(seen.has(k))return false;seen.add(k);return true;});
+}
+function renderNewMachineCheck(){
+  const body=$('checkRows'); if(!body)return;
+  if(!newMachineRows.length){body.innerHTML='<tr><td colspan="11" class="empty">③ 新台チェック表Excelを添付してください</td></tr>';return;}
+  const st=checkState();
+  body.innerHTML=newMachineRows.map((x,i)=>{
+    const id='new|'+[x.ps,x.machine,x.certNo,x.machineNo,i].join('|'),v=st[id]||{};
+    const cb=f=>`<input class="ck" type="checkbox" ${v[f]?'checked':''} onchange="saveCheck('${esc(id)}','${f}',this.checked)">`;
+    const sel=(f,opts)=>`<td><select onchange="saveCheck('${esc(id)}','${f}',this.value)"><option value="">選択</option>${opts.map(o=>`<option value="${o}" ${(v[f]||'')===o?'selected':''}>${o}</option>`).join('')}</select></td>`;
+    return `<tr><td>${esc(x.ps)}</td><td>${esc(x.status||'')}</td><td class="mname">${esc(x.machine)}</td><td>${esc(x.count||'')}</td><td>${cb('inspection')}</td>${sel('kind',['本体','セル'])}${sel('carrier',['飛鳥運輸','清興運輸','大塚倉庫'])}<td>${cb('delivery')}</td><td>${cb('manual')}</td><td>${cb('copy')}</td><td>${cb('nail')}</td></tr>`;
+  }).join('');
+}
+async function loadNewMachine(file){
+  try{$('newStatus').className='status';$('newStatus').textContent='新台データを読み込み中…';const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array',cellDates:false});newMachineRows=extractNewMachineRows(wb);if(!newMachineRows.length)throw new Error('【新台】欄のD列に機種を検出できませんでした。');$('newStatus').className='status ok';$('newStatus').textContent=`読込完了：${file.name} ／ ${newMachineRows.length}機種`;renderNewMachineCheck();renderDelivery();if($('popRows')){loadPop();savePop();}}catch(e){newMachineRows=[];$('newStatus').className='status err';$('newStatus').textContent='エラー：'+(e.message||e);renderNewMachineCheck();}}
+
+function extractNumbers(wb){let nums=[];for(const name of wb.SheetNames){const ws=wb.Sheets[name];if(!ws||!ws['!ref'])continue;const range=XLSX.utils.decode_range(ws['!ref']);const endRow=Math.min(range.e.r,74);for(let r=Math.max(range.s.r,5);r<=endRow;r++)for(let c=range.s.c;c<=range.e.c;c++){const cell=ws[XLSX.utils.encode_cell({r,c})];if(!cell)continue;const n=isMachineNumber(cell.v);if(n!==null)nums.push(n);}}return [...new Set(nums)].sort((a,b)=>a-b);}
+function extractMachines(wb){const out=[];const seen=new Set();for(const name of wb.SheetNames){const ws=wb.Sheets[name];if(!ws||!ws['!ref'])continue;const range=XLSX.utils.decode_range(ws['!ref']);for(let r=range.s.r;r<=range.e.r;r++){const headers=[];for(let c=range.s.c;c<=range.e.c;c++)if(txt(ws[XLSX.utils.encode_cell({r,c})]?.v)==='記号')headers.push(c);for(const codeCol of headers){let makerCol=-1,machineCol=-1;for(let c=codeCol+1;c<=Math.min(range.e.c,codeCol+14);c++){const h=txt(ws[XLSX.utils.encode_cell({r,c})]?.v);if(h==='メーカー'&&makerCol<0)makerCol=c;if(h==='機種名'&&machineCol<0)machineCol=c;}if(makerCol<0||machineCol<0)continue;let blankRun=0;for(let rr=r+1;rr<=range.e.r;rr++){const code=txt(ws[XLSX.utils.encode_cell({r:rr,c:codeCol})]?.v),maker=txt(ws[XLSX.utils.encode_cell({r:rr,c:makerCol})]?.v),machine=txt(ws[XLSX.utils.encode_cell({r:rr,c:machineCol})]?.v);if(!code&&!maker&&!machine){if(++blankRun>=4)break;continue}blankRun=0;if(!code||!maker||!machine||code==='記号')continue;const key=[code,maker,machine].join('\u0001');if(seen.has(key))continue;seen.add(key);out.push({code,maker,machine,certificationNo:'',certificationDeadline:'',deadlineSource:'',certType:'',isCertified:false});}}}}return out;}
+function extractCertRecords(wb){const out=[];for(const name of wb.SheetNames){const ws=wb.Sheets[name];if(!ws||!ws['!ref'])continue;const range=XLSX.utils.decode_range(ws['!ref']);for(let r=range.s.r;r<=range.e.r;r++){const type=txt(ws[XLSX.utils.encode_cell({r,c:2})]?.v);const marker=txt(ws[XLSX.utils.encode_cell({r,c:4})]?.v);const maker=txt(ws[XLSX.utils.encode_cell({r,c:3})]?.v);if(marker==='型式名'||maker==='メーカー名'){continue}const machine=marker;if(!maker||!machine)continue;const g=dateFromCell(ws[XLSX.utils.encode_cell({r,c:6})]);const h=dateFromCell(ws[XLSX.utils.encode_cell({r,c:7})]);const no=txt(ws[XLSX.utils.encode_cell({r,c:8})]?.w||ws[XLSX.utils.encode_cell({r,c:8})]?.v);if(!no&&!g&&!h)continue;out.push({maker,machine,certificationNo:no,g,h,certType:type,isCertified:type.includes('認定機')});}}return out;}
+function enrichMachines(){if(!machines.length)return;const idx=new Map();for(const c of certRecords){const k=norm(c.maker)+'|'+norm(c.machine);if(!idx.has(k))idx.set(k,[]);idx.get(k).push(c);}const now=today0();for(const m of machines){const list=idx.get(norm(m.maker)+'|'+norm(m.machine))||[];const c=list[0];if(!c){m.certificationNo='';m.certificationDeadline='';m.deadlineSource='';m.certType='';m.isCertified=false;continue}m.certificationNo=c.certificationNo||'';m.certType=c.certType||'';m.isCertified=!!c.isCertified;const useH=c.g&&now>c.g&&c.h;m.certificationDeadline=fmtDate(useH?c.h:c.g);m.deadlineSource=useH?'H列（認定期限）':'G列（検定期限）';}if(layoutWb)assignments=buildAssignments(layoutWb,machines);}
+function buildAssignments(wb,machineList){const master=new Map(machineList.map(x=>[x.code,x]));const result=new Map();for(const name of wb.SheetNames){const ws=wb.Sheets[name];if(!ws||!ws['!ref'])continue;const range=XLSX.utils.decode_range(ws['!ref']);const layoutEnd=Math.min(range.e.r,74);const merges=ws['!merges']||[];const mergeMap=new Map();for(const m of merges){if(m.s.r>layoutEnd)continue;for(let r=m.s.r;r<=Math.min(m.e.r,layoutEnd);r++)for(let c=m.s.c;c<=m.e.c;c++)mergeMap.set(r+','+c,m)}const visited=new Set();const numsAt=cells=>{const a=[];for(const [r,c] of cells){if(r<range.s.r||r>layoutEnd||c<range.s.c||c>range.e.c)continue;const n=isMachineNumber(ws[XLSX.utils.encode_cell({r,c})]?.v);if(n!==null)a.push(n)}return a};for(let r=range.s.r;r<=layoutEnd;r++)for(let c=range.s.c;c<=range.e.c;c++){const code=txt(ws[XLSX.utils.encode_cell({r,c})]?.v);if(!master.has(code))continue;const mg=mergeMap.get(r+','+c);const r1=mg?mg.s.r:r,r2=mg?mg.e.r:r,c1=mg?mg.s.c:c,c2=mg?mg.e.c:c;const key=[r1,c1,r2,c2].join(',');if(visited.has(key))continue;visited.add(key);const candidates=[numsAt(Array.from({length:c2-c1+1},(_,i)=>[r1-1,c1+i])),numsAt(Array.from({length:c2-c1+1},(_,i)=>[r2+1,c1+i])),numsAt(Array.from({length:r2-r1+1},(_,i)=>[r1+i,c1-1])),numsAt(Array.from({length:r2-r1+1},(_,i)=>[r1+i,c2+1]))];let best=[];for(const a of candidates)if(a.length>best.length)best=a;const info=master.get(code);for(const n of best)if(!result.has(n))result.set(n,{number:n,code:info.code,maker:info.maker,machine:info.machine,certificationNo:info.certificationNo||'',certificationDeadline:info.certificationDeadline||'',deadlineSource:info.deadlineSource||'',certType:info.certType||'',isCertified:!!info.isCertified});}}return [...result.values()].sort((a,b)=>a.number-b.number);}
+function machineFiltered(){const q=$('mq').value.trim().toLowerCase();let a=machines.filter(x=>!q||[x.code,x.maker,x.machine,x.certificationNo,x.certificationDeadline,x.deadlineSource,x.certType].some(v=>String(v??'').toLowerCase().includes(q)));const sort=$('msort').value;if(sort==='maker')a.sort((x,y)=>naturalCode(x.maker,y.maker)||naturalCode(x.code,y.code));else a.sort((x,y)=>naturalCode(x.code,y.code));return a;}
+function renderMachines(){const a=machineFiltered();$('mshown').textContent=a.length.toLocaleString('ja-JP');$('mmakers').textContent=new Set(a.map(x=>x.maker)).size.toLocaleString('ja-JP');$('mrows').innerHTML=a.length?a.map(x=>`<tr><td class="code">${esc(x.code)}</td><td>${esc(x.maker)}</td><td class="machine">${esc(x.machine)}</td><td>${esc(x.certificationNo||'-')}</td><td>${x.isCertified?'<span class="certmark" title="認定機">認</span>':'-'}</td><td title="${esc(x.deadlineSource)}">${esc(x.certificationDeadline||'-')}</td></tr>`).join(''):`<tr><td colspan="6" class="empty">${machines.length?'該当する機種はありません':'配置図Excelを添付してください'}</td></tr>`;}
+function numberFiltered(){const q=$('q').value.trim().toLowerCase(),mi=parseInt($('min').value,10),ma=parseInt($('max').value,10),ord=$('order').value;const amap=new Map(assignments.map(x=>[x.number,x]));let a=numbers.map(n=>amap.get(n)||{number:n,maker:'',machine:'',certificationNo:'',certificationDeadline:'',deadlineSource:'',certType:'',isCertified:false}).filter(x=>(!q||[x.number,x.maker,x.machine,x.certificationNo,x.certificationDeadline,x.certType].some(v=>String(v).toLowerCase().includes(q)))&&(Number.isNaN(mi)||x.number>=mi)&&(Number.isNaN(ma)||x.number<=ma));a.sort((x,y)=>ord==='asc'?x.number-y.number:y.number-x.number);return a;}
+function renderNumbers(){const a=numberFiltered();const allMap=new Map(assignments.map(x=>[x.number,x]));const matched=numbers.filter(n=>allMap.has(n)).length;$('shown').textContent=a.length.toLocaleString('ja-JP');$('matched').textContent=matched.toLocaleString('ja-JP')+'台';$('unmatched').textContent=(numbers.length-matched).toLocaleString('ja-JP')+'台';$('rows').innerHTML=a.length?a.map(x=>`<tr><td class="count">${x.number}</td><td>${esc(x.maker||'-')}</td><td class="machine">${esc(x.machine||'-')}</td><td>${esc(x.certificationNo||'-')}</td><td>${x.isCertified?'<span class="certmark" title="認定機">認</span>':'-'}</td><td title="${esc(x.deadlineSource)}">${esc(x.certificationDeadline||'-')}</td></tr>`).join(''):`<tr><td colspan="6" class="empty">${numbers.length?'該当する台番号はありません':'配置図Excelを添付してください'}</td></tr>`;}
+let certFilter='all';
+const APPLICATION_KEY='machine_cert_applications_v1';
+function applicationId(x){return [x.certificationNo||'',x.maker||'',x.machine||''].join('|')}
+function applicationMap(){try{return JSON.parse(localStorage.getItem(APPLICATION_KEY)||'{}')}catch(e){return {}}}
+function isApplied(x){return !!applicationMap()[applicationId(x)]}
+function markApplied(id){const m=applicationMap();m[id]={done:true,at:new Date().toISOString()};localStorage.setItem(APPLICATION_KEY,JSON.stringify(m));renderCertSummary();}
+function cancelApplied(id){const m=applicationMap();delete m[id];localStorage.setItem(APPLICATION_KEY,JSON.stringify(m));renderCertSummary();}
+function certGrouped(){
+  const map=new Map();
+  for(const x of assignments){
+    if(!x.certType)continue;
+    const key=[x.maker,x.machine,x.certificationNo,x.certType,x.certificationDeadline].join('|');
+    if(!map.has(key))map.set(key,{maker:x.maker,machine:x.machine,certificationNo:x.certificationNo,certType:x.certType,isCertified:x.isCertified,deadline:x.certificationDeadline,deadlineSource:x.deadlineSource,count:0});
+    map.get(key).count++;
+  }
+  return [...map.values()];
+}
+function daysToDeadline(s){if(!s)return null;const m=String(s).match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);if(!m)return null;const d=new Date(+m[1],+m[2]-1,+m[3]);return Math.ceil((d-today0())/86400000);}
+function renderCertSummary(){
+  const grouped=certGrouped();
+  const inspection=assignments.filter(x=>x.certType&&String(x.certType).includes('検定機')&&!x.isCertified).length;
+  const certified=assignments.filter(x=>x.isCertified).length;
+  const total=inspection+certified;
+  const soon=assignments.filter(x=>{const d=daysToDeadline(x.certificationDeadline);return d!==null&&d>=0&&d<=92&&!isApplied(x)}).length;
+  const applied=grouped.filter(x=>isApplied(x)).reduce((n,x)=>n+x.count,0);
+  $('inspectionCount').innerHTML=inspection.toLocaleString('ja-JP')+'<small style="font-size:13px">台</small>';
+  $('certifiedCount').innerHTML=certified.toLocaleString('ja-JP')+'<small style="font-size:13px">台</small>';
+  $('classifiedCount').innerHTML=total.toLocaleString('ja-JP')+'<small style="font-size:13px">台</small>';
+  $('soonCount').innerHTML=soon.toLocaleString('ja-JP')+'<small style="font-size:13px">台</small>';
+  if($('appliedCount'))$('appliedCount').innerHTML=applied.toLocaleString('ja-JP')+'<small style="font-size:13px">台</small>';
+  const q=($('certSearch')?.value||'').trim().toLowerCase();
+  let a=grouped.filter(x=>{
+    if(certFilter==='認定機'&&!x.isCertified)return false;
+    if(certFilter==='検定機'&&(x.isCertified||!String(x.certType).includes('検定機')))return false;
+    if(certFilter==='申請済'&&!isApplied(x))return false;
+    if(certFilter==='3か月前対象'){const d=daysToDeadline(x.deadline);if(d===null||d<0||d>92||isApplied(x))return false;}
+    return !q||[x.maker,x.machine,x.certificationNo,x.certType].some(v=>String(v||'').toLowerCase().includes(q));
+  });
+  a.sort((x,y)=>{const dx=daysToDeadline(x.deadline),dy=daysToDeadline(y.deadline);return (dx??999999)-(dy??999999)||naturalCode(x.machine,y.machine)});
+  const shown=a.reduce((n,x)=>n+x.count,0);
+  if($('certViewSummary'))$('certViewSummary').textContent=`${a.length.toLocaleString('ja-JP')}機種を表示（総台数 ${shown.toLocaleString('ja-JP')}台）`;
+  if(!numbers.length){$('certSummaryRows').innerHTML='<tr><td colspan="7" class="empty">Excelファイルを添付してください</td></tr>';return}
+  $('certSummaryRows').innerHTML=a.length?a.map(x=>{const dd=daysToDeadline(x.deadline);let judge='—',cls='';if(dd!==null&&dd<0){judge='期限切れ';cls='sb-exp'}else if(dd!==null&&dd<=92){judge='3か月以内';cls='sb-soon'}const type=x.isCertified?'<span class="statusbadge sb-rec">認定機</span>':'<span class="statusbadge sb-test">検定機</span>';const applied=isApplied(x);const apply=applied?`<button class="applybtn done" onclick="cancelApplied('${esc(applicationId(x))}')" title="クリックで申請済を取り消します">申請済<br><small>取消</small></button>`:((dd!==null&&dd>=0&&dd<=92)?`<button class="applybtn" onclick="markApplied('${esc(applicationId(x))}')">申請中</button>`:'—');return `<tr><td>${type}</td><td><div>${esc(x.maker)}</div><div class="machine">${esc(x.machine)}</div></td><td class="count">${x.count}</td><td>${esc(x.certificationNo||'-')}</td><td title="${esc(x.deadlineSource||'')}">${esc(x.deadline||'-')}</td><td>${cls?`<span class="statusbadge ${cls}">${judge}</span>`:judge}</td><td>${apply}</td></tr>`}).join(''):'<tr><td colspan="7" class="empty">該当する機種はありません</td></tr>';
+}
+async function loadLayout(file){try{$('status').className='status';$('status').textContent='読み込み・照合中…';const buf=await file.arrayBuffer();layoutWb=XLSX.read(buf,{type:'array',cellDates:false});numbers=extractNumbers(layoutWb);machines=extractMachines(layoutWb);enrichMachines();assignments=buildAssignments(layoutWb,machines);if(!numbers.length&&!machines.length)throw new Error('配置図データを検出できませんでした。');const matched=new Set(assignments.map(x=>x.number)).size;$('status').className='status ok';$('status').textContent=`読込完了：${file.name} ／ ${numbers.length.toLocaleString()}台`;$('stamp').textContent=`${file.name}：${matched.toLocaleString()}台照合`;updateBadge();renderMachines();renderNumbers();renderCertSummary();}catch(e){$('status').className='status err';$('status').textContent='エラー：'+(e.message||e);}}
+async function loadCert(file){try{$('certStatus').className='status';$('certStatus').textContent='期限資料を読み込み中…';const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array',cellDates:false});certRecords=extractCertRecords(wb);if(!certRecords.length)throw new Error('期限資料を検出できませんでした。');enrichMachines();$('certStatus').className='status ok';$('certStatus').textContent=`読込完了：${file.name} ／ ${certRecords.length.toLocaleString()}件`;updateBadge();renderMachines();renderNumbers();renderCertSummary();}catch(e){certRecords=[];$('certStatus').className='status err';$('certStatus').textContent='エラー：'+(e.message||e);}}
+function updateBadge(){if(!numbers.length){$('badge').textContent='配置図 未読込';return}const matched=new Set(assignments.map(x=>x.number)).size;const certMatched=machines.filter(x=>x.certificationNo||x.certificationDeadline).length;$('badge').textContent=`${matched}/${numbers.length}台 機種照合・期限${certMatched}機種`;}
+function setupDrop(id,inputId,loader){const drop=$(id);['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));drop.addEventListener('drop',e=>{const f=e.dataTransfer.files?.[0];if(f)loader(f)});$(inputId).addEventListener('change',e=>{const f=e.target.files?.[0];if(f)loader(f)});}
+setupDrop('drop','file',loadLayout);setupDrop('certDrop','certFile',loadCert);setupDrop('newDrop','newMachineFile',loadNewMachine);
+
+const CHECK_KEY="machineCheckTableV1";function checkState(){try{return JSON.parse(localStorage.getItem(CHECK_KEY)||"{}")}catch(e){return {}}}function saveCheck(id,f,v){const m=checkState();m[id]=m[id]||{};m[id][f]=v;localStorage.setItem(CHECK_KEY,JSON.stringify(m))}function machinePS(n){n=String(n||"").trim().toUpperCase();return(n.startsWith("L")||n.startsWith("S"))?"S":"P"}function renderCheckTable(){renderNewMachineCheck();}
+document.querySelectorAll('[data-certfilter]').forEach(el=>el.addEventListener('click',()=>{certFilter=el.dataset.certfilter;document.querySelectorAll('[data-certfilter]').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderCertSummary();}));$('certSearch').addEventListener('input',renderCertSummary);$('certReset').onclick=()=>{$('certSearch').value='';certFilter='all';document.querySelectorAll('[data-certfilter]').forEach(x=>x.classList.toggle('active',x.dataset.certfilter==='all'));renderCertSummary();};$('certCsv').onclick=()=>{const rows=[...$('certSummaryRows').querySelectorAll('tr')].map(tr=>[...tr.children].map(td=>td.innerText.trim()));if(!rows.length||rows[0].length<7){alert('出力するデータがありません。');return}downloadCsv('検定・認定一覧.csv',[['区分','メーカー／機種名','台数','検定番号','検定・認定期限','判定','申請状況'],...rows]);};
+
+
+const DELIVERY_KEY='newMachineDeliveryV2';
+function deliveryState(){try{return JSON.parse(localStorage.getItem(DELIVERY_KEY)||'{}')}catch(e){return {}}}
+function deliveryRowId(x){return String(x.machine||'').trim();}
+function saveDelivery(){
+ const rows=[...document.querySelectorAll('#deliveryRows tr[data-id]')].map(tr=>({
+   id:tr.dataset.id,
+   maker:tr.querySelector('.d-maker')?.value||'',
+   body:tr.querySelector('.d-body')?.value||'',
+   board:tr.querySelector('.d-board')?.value||'',
+   status:tr.querySelector('.d-status')?.value||'未入庫',
+   deliveryDate:tr.querySelector('.d-date')?.value||''
+ }));
+ const o={
+   to:$('deliveryTo')?.value||'飛鳥運輸',
+   date:$('deliveryDate')?.value||'',
+   subject:$('deliverySubject')?.value||'',
+   name:$('deliveryName')?.value||'長友　鉄也',
+   rows
+ };
+ localStorage.setItem(DELIVERY_KEY,JSON.stringify(o));
+}
+function renderDelivery(){
+ const body=$('deliveryRows'); if(!body)return;
+ const st=deliveryState();
+ if($('deliveryTo'))$('deliveryTo').value=st.to||'飛鳥運輸';
+ if($('deliveryDate'))$('deliveryDate').value=st.date||'';
+ if($('deliverySubject'))$('deliverySubject').value=st.subject||'';
+ if($('deliveryName'))$('deliveryName').value=st.name||'長友　鉄也';
+
+ if(!newMachineRows.length){
+   body.innerHTML='<tr><td colspan="6" class="empty">③ 新台チェック表Excelを添付してください</td></tr>';
+   return;
+ }
+ const saved=new Map((st.rows||[]).map(r=>[String(r.id||''),r]));
+ body.innerHTML=newMachineRows.map(x=>{
+   const id=deliveryRowId(x),v=saved.get(id)||{};
+   return `<tr data-id="${esc(id)}">
+     <td>${esc(x.machine)}</td>
+     <td><input class="d-maker" type="text" value="${esc(v.maker||'')}" placeholder="メーカーを入力"></td>
+     <td><select class="d-body"><option value=""></option><option value="〇">〇</option></select></td>
+     <td><select class="d-board"><option value=""></option><option value="〇">〇</option></select></td>
+     <td><select class="d-status"><option value="入庫済">入庫済</option><option value="未入庫">未入庫</option><option value="取扱無し">取扱無し</option></select></td>
+     <td><input class="d-date" type="date" value="${esc(v.deliveryDate||'')}"></td>
+   </tr>`;
+ }).join('');
+ [...body.querySelectorAll('tr[data-id]')].forEach(tr=>{
+   const v=saved.get(tr.dataset.id)||{};
+   tr.querySelector('.d-body').value=v.body||'';
+   tr.querySelector('.d-board').value=v.board||'';
+   tr.querySelector('.d-status').value=v.status||'未入庫';
+   tr.querySelectorAll('input,select').forEach(el=>{
+     el.addEventListener('input',saveDelivery);
+     el.addEventListener('change',saveDelivery);
+   });
+ });
+}
+function showDelivery(){
+ ['numberPane','machinePane','certPane','checkPanel','popPanel'].forEach(id=>$(id)?.classList.add('hidden'));
+ $('deliveryPanel').classList.remove('hidden');
+ ['tabNumbers','tabMachines','tabCert','tabCheck','tabPop'].forEach(id=>$(id)?.classList.remove('active'));
+ $('tabDelivery').classList.add('active');
+ renderDelivery();
+}
+['deliveryTo','deliveryDate','deliverySubject','deliveryName'].forEach(id=>{
+ const el=$(id);
+ if(el){el.addEventListener('input',saveDelivery);el.addEventListener('change',saveDelivery);}
+});
+
+const POP_KEY='popOrderFormV1';
+function popState(){try{return JSON.parse(localStorage.getItem(POP_KEY)||'{}')}catch(e){return {}}}
+function savePop(){
+ const rows=[...document.querySelectorAll('#popRows tr')].map(tr=>({
+  machine:tr.querySelector('.pmachine')?.value||'',place:tr.querySelector('.pplace')?.value||'',
+  qty:tr.querySelector('.pqty')?.value||'',units:tr.querySelector('.punits')?.value||''
+ }));
+ const ids=['popRequestDate','popRequester','popOpenDate','popStore','popApplicant','popShimatai','popBigmo','posterA1','posterB2v','posterB0h','infoB2h','infoB0h','planA1','planB0h'];
+ const o={rows};ids.forEach(id=>o[id]=$(id)?.value||'');o.popShimataiRev=$('popShimataiRev')?.checked||false;o.popBigmoRev=$('popBigmoRev')?.checked||false;
+ localStorage.setItem(POP_KEY,JSON.stringify(o));
+}
+function addPopRow(v={}){
+ const tr=document.createElement('tr');
+ tr.innerHTML=`<td><input class="pmachine" value="${esc(v.machine||'')}" placeholder="機種名" ${newMachineRows.length?'readonly':''}></td>
+ <td><select class="pplace"><option value=""></option><option>1円</option><option>4円</option><option>10S</option><option>20S</option></select></td>
+ <td><input class="pqty" type="number" min="0" value="${esc(v.qty||'')}"></td>
+ <td><input class="punits" type="number" min="0" value="${esc(v.units||'')}" ${newMachineRows.length?'readonly':''}></td>
+ <td><button class="btn secondary premove" type="button">削除</button></td>`;
+ tr.querySelector('.pplace').value=v.place||'';
+ tr.querySelectorAll('input,select').forEach(x=>x.addEventListener('change',savePop));
+ tr.querySelector('.premove').onclick=()=>{tr.remove();savePop()};
+ $('popRows').appendChild(tr);
+}
+function popRowsFromNewData(savedRows=[]){
+ const saved=new Map((savedRows||[]).map(r=>[String(r.machine||'').trim(),r]));
+ return newMachineRows.map(x=>{const prev=saved.get(String(x.machine||'').trim())||{};return {machine:x.machine||'',place:prev.place||'',qty:prev.qty||'',units:x.count||''};});
+}
+function loadPop(){
+ const o=popState(),ids=['popRequestDate','popRequester','popOpenDate','popStore','popApplicant','popShimatai','popBigmo','posterA1','posterB2v','posterB0h','infoB2h','infoB0h','planA1','planB0h'];
+ ids.forEach(id=>{if($(id)&&o[id]!==undefined)$(id).value=o[id]});
+ if($('popRequester'))$('popRequester').value='長友　鉄也';
+ if($('popShimataiRev'))$('popShimataiRev').checked=!!o.popShimataiRev;if($('popBigmoRev'))$('popBigmoRev').checked=!!o.popBigmoRev;
+ $('popRows').innerHTML='';
+ const rows=newMachineRows.length?popRowsFromNewData(o.rows||[]):(o.rows&&o.rows.length?o.rows:Array.from({length:8},()=>({})));
+ rows.forEach(addPopRow);
+}
+function showPop(){
+ $('deliveryPanel')?.classList.add('hidden');$('tabDelivery')?.classList.remove('active');
+ ['numberPane','machinePane','certPane','checkPanel'].forEach(id=>$(id)?.classList.add('hidden'));$('popPanel').classList.remove('hidden');
+ ['tabNumbers','tabMachines','tabCert','tabCheck'].forEach(id=>$(id)?.classList.remove('active'));$('tabPop').classList.add('active');loadPop();
+}
+
+$('tabCheck').onclick=()=>{$('deliveryPanel').classList.add('hidden');$('tabDelivery').classList.remove('active');$('popPanel').classList.add('hidden');$('tabPop').classList.remove('active');$('checkPanel').classList.remove('hidden');$('numberPane').classList.add('hidden');$('machinePane').classList.add('hidden');$('certPane').classList.add('hidden');['tabNumbers','tabMachines','tabCert'].forEach(id=>$(id).classList.remove('active'));$('tabCheck').classList.add('active');renderNewMachineCheck();};$('tabMachines').onclick=()=>{$('deliveryPanel').classList.add('hidden');$('tabDelivery').classList.remove('active');$('popPanel').classList.add('hidden');$('tabPop').classList.remove('active');$('checkPanel').classList.add('hidden');$('tabCheck').classList.remove('active');$('machinePane').classList.remove('hidden');$('numberPane').classList.add('hidden');$('certPane').classList.add('hidden');$('tabMachines').classList.add('active');$('tabNumbers').classList.remove('active');$('tabCert').classList.remove('active')};$('tabNumbers').onclick=()=>{$('deliveryPanel').classList.add('hidden');$('tabDelivery').classList.remove('active');$('popPanel').classList.add('hidden');$('tabPop').classList.remove('active');$('checkPanel').classList.add('hidden');$('tabCheck').classList.remove('active');$('numberPane').classList.remove('hidden');$('machinePane').classList.add('hidden');$('certPane').classList.add('hidden');$('tabNumbers').classList.add('active');$('tabMachines').classList.remove('active');$('tabCert').classList.remove('active')};$('tabCert').onclick=()=>{$('deliveryPanel').classList.add('hidden');$('tabDelivery').classList.remove('active');$('popPanel').classList.add('hidden');$('tabPop').classList.remove('active');$('checkPanel').classList.add('hidden');$('tabCheck').classList.remove('active');$('certPane').classList.remove('hidden');$('numberPane').classList.add('hidden');$('machinePane').classList.add('hidden');$('tabCert').classList.add('active');$('tabNumbers').classList.remove('active');$('tabMachines').classList.remove('active');renderCertSummary()};
+['mq','msort'].forEach(id=>$(id).addEventListener('input',renderMachines));$('mreset').onclick=()=>{$('mq').value='';$('msort').value='code';renderMachines()};$('mcsv').onclick=()=>{const a=machineFiltered();if(!a.length){alert('出力するデータがありません。');return}downloadCsv('機種マスタ.csv',[['記号','メーカー','機種名','検定番号','区分','期限'],...a.map(x=>[x.code,x.maker,x.machine,x.certificationNo,x.isCertified?'認定機':'',x.certificationDeadline])])};
+['q','min','max','order'].forEach(id=>$(id).addEventListener('input',renderNumbers));$('reset').onclick=()=>{$('q').value='';$('min').value='';$('max').value='';$('order').value='asc';renderNumbers()};$('csv').onclick=()=>{const a=numberFiltered();if(!a.length){alert('出力するデータがありません。');return}downloadCsv('台番号・機種一覧.csv',[['台番号','メーカー','機種名','検定番号','区分','期限'],...a.map(x=>[x.number,x.maker,x.machine,x.certificationNo,x.isCertified?'認定機':'',x.certificationDeadline])])};
+function downloadCsv(name,rows){const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const csv=rows.map(r=>r.map(cell).join(',')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+renderMachines();renderNumbers();renderCertSummary();
+
+document.addEventListener('DOMContentLoaded',()=>{renderCheckTable();const a=$('checkAdd'),pr=$('checkPrint'),r=$('checkReset');if(a)a.onclick=()=>$('checkRows').insertAdjacentHTML('beforeend','<tr><td contenteditable="true"></td><td contenteditable="true"></td><td class="mname" contenteditable="true"></td><td contenteditable="true"></td>'+'<td><input class="ck" type="checkbox"></td><td><select><option>選択</option><option>本体</option><option>セル</option></select></td><td><select><option>選択</option><option>飛鳥運輸</option><option>清興運輸</option><option>大塚倉庫</option></select></td>'+Array.from({length:4},()=>'<td><input class="ck" type="checkbox"></td>').join('')+'</tr>');if(pr)pr.onclick=()=>window.print();if(r)r.onclick=()=>{document.querySelectorAll('#checkRows input[type=checkbox]').forEach(x=>x.checked=false)};});
+</script>
+
+
+
+
+<script id="numbers-print-window">
+(function(){
+  document.addEventListener('click', function(e){
+    if(!e.target || e.target.id !== 'numbersPrint') return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    const table = document.getElementById('numberPrintTable');
+    if(!table){
+      alert('台番号一覧が見つかりません。');
+      return;
+    }
+
+    const w = window.open('', '_blank', 'width=900,height=1100');
+    if(!w){
+      alert('印刷画面を開けませんでした。ブラウザのポップアップ許可をご確認ください。');
+      return;
+    }
+
+    const html = `<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>台番号機種一覧</title>
+<style>
+@page{size:A4 portrait;margin:10mm}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","Yu Gothic UI","Meiryo",sans-serif;color:#111;background:#fff}
+table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.5pt}
+thead{display:table-header-group}
+tr{page-break-inside:avoid}
+th,td{padding:1.7mm 1.2mm;border-bottom:.4pt solid #bbb;line-height:1.25;word-break:break-word;overflow-wrap:anywhere;white-space:normal;vertical-align:middle}
+th{font-size:9pt;background:#f3f4f6;text-align:left;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+th:nth-child(1),td:nth-child(1){width:16mm;text-align:center}
+th:nth-child(2),td:nth-child(2){width:28mm}
+th:nth-child(3),td:nth-child(3){width:78mm}
+th:nth-child(4),td:nth-child(4){width:28mm}
+th:nth-child(5),td:nth-child(5){width:14mm;text-align:center}
+th:nth-child(6),td:nth-child(6){width:26mm}
+</style>
+</head>
+<body>${table.outerHTML}
 <script>
-const initial=[{"type": "パチンコ", "category": "検定機", "maker": "アムテックス", "machine": "Pポチッと一発おだてブタ2V1", "date": "2023-10-24", "validUntil": "2026-10-23", "certUntil": "", "number": "3P0883", "count": 1, "threeMonthDate": "2026-07-23", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ニューギン", "machine": "P真・花の慶次3N－K", "date": "2023-10-24", "validUntil": "2026-10-23", "certUntil": "", "number": "3P0969", "count": 2, "threeMonthDate": "2026-07-23", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ミズホ", "machine": "L／バジリスク絆2～天膳～／ZN", "date": "2023-10-31", "validUntil": "2026-10-30", "certUntil": "", "number": "330412", "count": 3, "threeMonthDate": "2026-07-30", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ジェイビー", "machine": "Lゴジラ対エヴァンゲリオンjA", "date": "2023-11-21", "validUntil": "2026-11-20", "certUntil": "", "number": "3S1349", "count": 3, "threeMonthDate": "2026-08-20", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "平和", "machine": "Pルパン三世真速9YS1Y", "date": "2023-11-21", "validUntil": "2026-11-20", "certUntil": "", "number": "310139", "count": 2, "threeMonthDate": "2026-08-20", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サミー", "machine": "P北斗の拳強敵SSPA", "date": "2023-11-21", "validUntil": "2026-11-20", "certUntil": "", "number": "3P0914", "count": 6, "threeMonthDate": "2026-08-20", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ビスティ", "machine": "P新世紀エヴァンゲリオン15 未来への咆哮Y", "date": "2023-12-05", "validUntil": "2026-12-04", "certUntil": "", "number": "1P1294", "count": 4, "threeMonthDate": "2026-09-04", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ディ・ライト", "machine": "P天才バカボン7～福神スペック～LTH－JH", "date": "2023-12-12", "validUntil": "2026-12-11", "certUntil": "", "number": "310522", "count": 4, "threeMonthDate": "2026-09-11", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三共", "machine": "PAフィーバーパワフルR", "date": "2024-01-16", "validUntil": "2027-01-15", "certUntil": "", "number": "310624", "count": 1, "threeMonthDate": "2026-10-15", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三洋物産", "machine": "P大工の源さん超韋駄天2HLB", "date": "2024-01-23", "validUntil": "2027-01-22", "certUntil": "", "number": "310527", "count": 1, "threeMonthDate": "2026-10-22", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三共", "machine": "Pフィーバー炎炎ノ消防隊YR", "date": "2024-02-13", "validUntil": "2027-02-12", "certUntil": "", "number": "3P1234", "count": 2, "threeMonthDate": "2026-11-12", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サンセイアールアンドディ", "machine": "P牙狼11～冴島大河～XX－MU", "date": "2024-03-05", "validUntil": "2027-03-04", "certUntil": "", "number": "410024", "count": 3, "threeMonthDate": "2026-12-04", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "藤商事", "machine": "P貞子FMD", "date": "2024-03-12", "validUntil": "2027-03-11", "certUntil": "", "number": "3P1869", "count": 1, "threeMonthDate": "2026-12-11", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "オッケー．", "machine": "P魔法少女まどか☆マギカ3LM3", "date": "2024-03-19", "validUntil": "2027-03-18", "certUntil": "", "number": "3P1891", "count": 1, "threeMonthDate": "2026-12-18", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "北電子", "machine": "SウルトラミラクルジャグラーKT", "date": "2024-04-02", "validUntil": "2027-04-01", "certUntil": "", "number": "330695", "count": 6, "threeMonthDate": "2027-01-01", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "オッケー．", "machine": "PアズールレーンTHE ANIMATION～異次元トリガー199～M4", "date": "2024-04-23", "validUntil": "2027-04-22", "certUntil": "", "number": "4P0088", "count": 3, "threeMonthDate": "2027-01-22", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ミズホ", "machine": "S／沖ドキ！BLACK／EP", "date": "2024-04-23", "validUntil": "2027-04-22", "certUntil": "", "number": "4S0253", "count": 5, "threeMonthDate": "2027-01-22", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "セブンリーグ", "machine": "LパチスロゴッドイーターリザレクションSLED", "date": "2024-05-28", "validUntil": "2027-05-27", "certUntil": "", "number": "4S0159", "count": 6, "threeMonthDate": "2027-02-27", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三共", "machine": "PAフィーバーかぐや様は告らせたいYG", "date": "2024-06-04", "validUntil": "2027-06-03", "certUntil": "", "number": "3P1348", "count": 1, "threeMonthDate": "2027-03-03", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "豊丸産業", "machine": "PAコマコマ倶楽部with坂本冬美LOOP1", "date": "2024-06-25", "validUntil": "2027-06-24", "certUntil": "", "number": "4P0286", "count": 1, "threeMonthDate": "2027-03-24", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ジェイビー", "machine": "Lかぐや様は告らせたいjA", "date": "2024-07-02", "validUntil": "2027-07-01", "certUntil": "", "number": "4S0464", "count": 6, "threeMonthDate": "2027-04-01", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ディ・ライト", "machine": "P中森明菜・歌姫伝説愛KD－NS", "date": "2024-07-02", "validUntil": "2027-07-01", "certUntil": "", "number": "4P0108", "count": 1, "threeMonthDate": "2027-04-01", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サンスリー", "machine": "PAわんわんセレブレーションAGBD", "date": "2024-07-09", "validUntil": "2027-07-08", "certUntil": "", "number": "410261", "count": 25, "threeMonthDate": "2027-04-08", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "アデリオン", "machine": "LモンスターハンターライズXA", "date": "2024-07-16", "validUntil": "2027-07-15", "certUntil": "", "number": "430243", "count": 3, "threeMonthDate": "2027-04-15", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "京楽産業.", "machine": "e仮面ライダー電王KL12", "date": "2024-07-23", "validUntil": "2027-07-22", "certUntil": "", "number": "4P0721", "count": 1, "threeMonthDate": "2027-04-22", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "北電子", "machine": "SネオアイムジャグラーEX-KK", "date": "2024-08-06", "validUntil": "2027-08-05", "certUntil": "", "number": "4S0346", "count": 43, "threeMonthDate": "2027-05-05", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三洋物産", "machine": "P大海物語5スペシャルALTA", "date": "2024-08-13", "validUntil": "2027-08-12", "certUntil": "", "number": "4P0495", "count": 82, "threeMonthDate": "2027-05-12", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ジェイビー", "machine": "eフィーバーからくりサーカス2R", "date": "2024-08-27", "validUntil": "2027-08-26", "certUntil": "", "number": "410393", "count": 3, "threeMonthDate": "2027-05-26", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ビスティ", "machine": "Pゴジラ対エヴァンゲリオン2R", "date": "2024-09-17", "validUntil": "2027-09-16", "certUntil": "", "number": "4P0672", "count": 1, "threeMonthDate": "2027-06-16", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "竹屋", "machine": "PネオモンスターハウスAL", "date": "2024-09-24", "validUntil": "2027-09-23", "certUntil": "", "number": "4P0597", "count": 1, "threeMonthDate": "2027-06-23", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "オッケー．", "machine": "Pにゃんこ大戦争～多様性のネコ～M4", "date": "2024-10-01", "validUntil": "2027-09-30", "certUntil": "", "number": "4P0947", "count": 2, "threeMonthDate": "2027-06-30", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "オレンジ", "machine": "Pゲゲゲの鬼太郎 獅子奮迅99Ver．RWC", "date": "2024-10-01", "validUntil": "2027-09-30", "certUntil": "", "number": "4P0931", "count": 1, "threeMonthDate": "2027-06-30", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "エレコ", "machine": "S／沖ドキ！BLACK／XA", "date": "2024-10-01", "validUntil": "2027-09-30", "certUntil": "", "number": "4S0556", "count": 49, "threeMonthDate": "2027-06-30", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "JFJ", "machine": "Pとある魔術の禁書目録2 Light JWX", "date": "2024-10-29", "validUntil": "2027-10-28", "certUntil": "", "number": "410608", "count": 2, "threeMonthDate": "2027-07-28", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ミズホ", "machine": "PハネモノファミリースタジアムMD", "date": "2024-10-29", "validUntil": "2027-10-28", "certUntil": "", "number": "4P0237", "count": 1, "threeMonthDate": "2027-07-28", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サンスリー", "machine": "P清流物語4HLC", "date": "2024-10-29", "validUntil": "2027-10-28", "certUntil": "", "number": "410448", "count": 1, "threeMonthDate": "2027-07-28", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "大都技研", "machine": "e／押忍番長漢の頂／L09", "date": "2024-10-29", "validUntil": "2027-10-28", "certUntil": "", "number": "4P1123", "count": 6, "threeMonthDate": "2027-07-28", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ニューギン", "machine": "PA花の慶次～裂N3-VY", "date": "2024-11-05", "validUntil": "2027-11-04", "certUntil": "", "number": "4P0801", "count": 2, "threeMonthDate": "2027-08-04", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ニューギン", "machine": "P花の慶次～裂N2-VC", "date": "2024-11-05", "validUntil": "2027-11-04", "certUntil": "", "number": "410576", "count": 3, "threeMonthDate": "2027-08-04", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "クロスアルファ", "machine": "L東京喰種CT", "date": "2024-11-12", "validUntil": "2027-11-11", "certUntil": "", "number": "4S1320", "count": 22, "threeMonthDate": "2027-08-11", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ビスティ", "machine": "Pシン・エヴァンゲリオンMV", "date": "2024-11-12", "validUntil": "2027-11-11", "certUntil": "", "number": "410629", "count": 2, "threeMonthDate": "2027-08-11", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "エンターライズ", "machine": "Lバイオハザード5ZE", "date": "2024-11-19", "validUntil": "2027-11-18", "certUntil": "", "number": "4S1201", "count": 2, "threeMonthDate": "2027-08-18", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "タイヨーエレック", "machine": "Ｌ　ＤＩＳＣＵＰウルトラリミックス　ＸＲ", "date": "2024-11-19", "validUntil": "2027-11-18", "certUntil": "", "number": "4S1442", "count": 2, "threeMonthDate": "2027-08-18", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "セブンリーグ", "machine": "LスーパーブラックジャックSLDC", "date": "2024-12-10", "validUntil": "2027-12-09", "certUntil": "", "number": "4S1230", "count": 1, "threeMonthDate": "2027-09-09", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三共", "machine": "Pフィーバーマクロスフロンティア5YS", "date": "2024-12-24", "validUntil": "2027-12-23", "certUntil": "", "number": "4P1510", "count": 1, "threeMonthDate": "2027-09-23", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三洋物産", "machine": "PA大海物語5HLD", "date": "2025-01-07", "validUntil": "2028-01-06", "certUntil": "", "number": "410759", "count": 12, "threeMonthDate": "2027-10-06", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ミズホ", "machine": "L／スマスロマギアレコード／RN", "date": "2025-01-14", "validUntil": "2028-01-13", "certUntil": "", "number": "4S1598", "count": 4, "threeMonthDate": "2027-10-13", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ニューギン", "machine": "PACYBORG009N2－K", "date": "2025-01-14", "validUntil": "2028-01-13", "certUntil": "", "number": "410761", "count": 1, "threeMonthDate": "2027-10-13", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ニューギン", "machine": "Pうる星やつら2N2－K", "date": "2025-01-14", "validUntil": "2028-01-13", "certUntil": "", "number": "4P1533", "count": 1, "threeMonthDate": "2027-10-13", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ジェイビー", "machine": "e東京喰種W", "date": "2025-01-14", "validUntil": "2028-01-13", "certUntil": "", "number": "410807", "count": 23, "threeMonthDate": "2027-10-13", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三共", "machine": "PフィーバーうたわれるものZ", "date": "2025-01-21", "validUntil": "2028-01-20", "certUntil": "", "number": "4P1607", "count": 2, "threeMonthDate": "2027-10-20", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三共", "machine": "Pフィーバー機動戦士ガンダムユニコーン2 Y", "date": "2025-01-21", "validUntil": "2028-01-20", "certUntil": "", "number": "4P1288", "count": 1, "threeMonthDate": "2027-10-20", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "サボハニ", "machine": "L／ヨシムネS／SC2", "date": "2025-01-28", "validUntil": "2028-01-27", "certUntil": "", "number": "430582", "count": 1, "threeMonthDate": "2027-10-27", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サミー", "machine": "e真北斗無双5SFEE", "date": "2025-01-28", "validUntil": "2028-01-27", "certUntil": "", "number": "410853", "count": 3, "threeMonthDate": "2027-10-27", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ユニバーサルブロス", "machine": "L／緑ドン5／FY", "date": "2025-02-04", "validUntil": "2028-02-03", "certUntil": "", "number": "4S1737", "count": 1, "threeMonthDate": "2027-11-03", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サミー", "machine": "Pデジハネ北斗の拳慈母SSPC", "date": "2025-02-18", "validUntil": "2028-02-17", "certUntil": "", "number": "4P1683", "count": 4, "threeMonthDate": "2027-11-17", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ビスティ", "machine": "P宇宙戦艦ヤマト2202－3MF", "date": "2025-02-18", "validUntil": "2028-02-17", "certUntil": "", "number": "410887", "count": 1, "threeMonthDate": "2027-11-17", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三洋物産", "machine": "PA海物語3R3LBA", "date": "2025-02-25", "validUntil": "2028-02-24", "certUntil": "", "number": "4P1571", "count": 2, "threeMonthDate": "2027-11-24", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "サボハニ", "machine": "L／いざ番長／SB8", "date": "2025-03-25", "validUntil": "2028-03-24", "certUntil": "", "number": "430901", "count": 5, "threeMonthDate": "2027-12-24", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ユニバーサルブロス", "machine": "LBAREXBRIGHTBA", "date": "2025-04-08", "validUntil": "2028-04-07", "certUntil": "", "number": "5S0110", "count": 4, "threeMonthDate": "2028-01-07", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "メーシー", "machine": "eシャーマンキングLB", "date": "2025-04-08", "validUntil": "2028-04-07", "certUntil": "", "number": "510123", "count": 1, "threeMonthDate": "2028-01-07", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "JFJ", "machine": "eとある魔術の禁書目録 一方通行 BIG JKZ", "date": "2025-04-15", "validUntil": "2028-04-14", "certUntil": "", "number": "510135", "count": 1, "threeMonthDate": "2028-01-14", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ジェイビー", "machine": "eフィーバー炎炎ノ消防隊2MS", "date": "2025-04-15", "validUntil": "2028-04-14", "certUntil": "", "number": "5P0201", "count": 3, "threeMonthDate": "2028-01-14", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ビスティ", "machine": "PAシン・エヴァンゲリオンY", "date": "2025-05-13", "validUntil": "2028-05-12", "certUntil": "", "number": "3P1780", "count": 2, "threeMonthDate": "2028-02-12", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ニューギン", "machine": "e花の慶次～傾奇一転H6", "date": "2025-05-13", "validUntil": "2028-05-12", "certUntil": "", "number": "5P0045", "count": 1, "threeMonthDate": "2028-02-12", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "豊丸産業", "machine": "PAコマコマ倶楽部with坂本冬美VS1", "date": "2025-05-20", "validUntil": "2028-05-19", "certUntil": "", "number": "5P0248", "count": 3, "threeMonthDate": "2028-02-19", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "アムテックス", "machine": "P戦国乙女7H0YZ3", "date": "2025-05-20", "validUntil": "2028-05-19", "certUntil": "", "number": "5P0093", "count": 1, "threeMonthDate": "2028-02-19", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "銀座", "machine": "e東京リベンジャーズGFEC", "date": "2025-05-20", "validUntil": "2028-05-19", "certUntil": "", "number": "510115", "count": 3, "threeMonthDate": "2028-02-19", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サンセイアールアンドディ", "machine": "e牙狼12XX－MJ", "date": "2025-05-20", "validUntil": "2028-05-19", "certUntil": "", "number": "5P0258", "count": 6, "threeMonthDate": "2028-02-19", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ジェイビー", "machine": "eフィーバーブルーロックMZ", "date": "2025-05-27", "validUntil": "2028-05-26", "certUntil": "", "number": "5P0439", "count": 1, "threeMonthDate": "2028-02-26", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ディ・ライト", "machine": "e真・一騎当千～軍神覚醒～AM－TS", "date": "2025-05-27", "validUntil": "2028-05-26", "certUntil": "", "number": "510289", "count": 3, "threeMonthDate": "2028-02-26", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "JFJ", "machine": "e女神のカフェテラスJLZ", "date": "2025-06-03", "validUntil": "2028-06-02", "certUntil": "", "number": "510287", "count": 5, "threeMonthDate": "2028-03-02", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "レオスター", "machine": "L新鬼武者3SA", "date": "2025-06-17", "validUntil": "2028-06-16", "certUntil": "", "number": "5S0507", "count": 4, "threeMonthDate": "2028-03-16", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "アムテックス", "machine": "Pルパン三世14L0YU1", "date": "2025-06-17", "validUntil": "2028-06-16", "certUntil": "", "number": "5P0282", "count": 2, "threeMonthDate": "2028-03-16", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "大都技研", "machine": "LB／クレアの秘宝伝ボーナストリガーVER．／A2", "date": "2025-06-24", "validUntil": "2028-06-23", "certUntil": "", "number": "530057", "count": 2, "threeMonthDate": "2028-03-23", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "オッケー．", "machine": "PAアズールレーンTHE ANIMATION～異次元トリガー79Ver．～M2", "date": "2025-07-01", "validUntil": "2028-06-30", "certUntil": "", "number": "4P0813", "count": 2, "threeMonthDate": "2028-03-30", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "サミー", "machine": "L スマスロ東京リベンジャーズ ZF", "date": "2025-07-08", "validUntil": "2028-07-07", "certUntil": "", "number": "5S0551", "count": 4, "threeMonthDate": "2028-04-07", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ニューギン", "machine": "PA義風堂々！！～兼続と慶次～3N－X", "date": "2025-07-15", "validUntil": "2028-07-14", "certUntil": "", "number": "510228", "count": 2, "threeMonthDate": "2028-04-14", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三洋物産", "machine": "Pスーパー海物語IN沖縄6LTP", "date": "2025-07-15", "validUntil": "2028-07-14", "certUntil": "", "number": "5P0746", "count": 5, "threeMonthDate": "2028-04-14", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "大都技研", "machine": "LB／シェイクボーナストリガー／A1", "date": "2025-07-29", "validUntil": "2028-07-28", "certUntil": "", "number": "530293", "count": 2, "threeMonthDate": "2028-04-28", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ジェイビー", "machine": "L革命機ヴァルヴレイヴ2jF", "date": "2025-07-29", "validUntil": "2028-07-28", "certUntil": "", "number": "5S0736", "count": 6, "threeMonthDate": "2028-04-28", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "大都技研", "machine": "P／Re：ゼロから始める異世界生活鬼がかりver／A03", "date": "2025-07-29", "validUntil": "2028-07-28", "certUntil": "", "number": "4P1603", "count": 1, "threeMonthDate": "2028-04-28", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "大都技研", "machine": "P／Re：ゼロから始める異世界生活鬼がかりver／L07", "date": "2025-07-29", "validUntil": "2028-07-28", "certUntil": "", "number": "4P1703", "count": 2, "threeMonthDate": "2028-04-28", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ジェイビー", "machine": "eフィーバーもののがたりF", "date": "2025-07-29", "validUntil": "2028-07-28", "certUntil": "", "number": "5P0760", "count": 5, "threeMonthDate": "2028-04-28", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サンセイアールアンドディ", "machine": "P転生したらスライムだった件ARJ", "date": "2025-08-05", "validUntil": "2028-08-04", "certUntil": "", "number": "4P1110", "count": 1, "threeMonthDate": "2028-05-04", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "藤商事", "machine": "Lとある科学の超電磁砲2FV", "date": "2025-08-12", "validUntil": "2028-08-11", "certUntil": "", "number": "530447", "count": 2, "threeMonthDate": "2028-05-11", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "オリンピア", "machine": "L銭形5L2", "date": "2025-08-12", "validUntil": "2028-08-11", "certUntil": "", "number": "5S0796", "count": 1, "threeMonthDate": "2028-05-11", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "銀座", "machine": "Pいくさの子戦極最強GRPJ", "date": "2025-08-12", "validUntil": "2028-08-11", "certUntil": "", "number": "5P0888", "count": 2, "threeMonthDate": "2028-05-11", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "藤商事", "machine": "eいせれべFSZ", "date": "2025-08-12", "validUntil": "2028-08-11", "certUntil": "", "number": "510549", "count": 2, "threeMonthDate": "2028-05-11", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "平和", "machine": "eルパン三世VSキャッツアイMAH4", "date": "2025-08-12", "validUntil": "2028-08-11", "certUntil": "", "number": "5P0807", "count": 1, "threeMonthDate": "2028-05-11", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "メーシー", "machine": "P沖ドキ！LG", "date": "2025-08-19", "validUntil": "2028-08-18", "certUntil": "", "number": "4P1855", "count": 2, "threeMonthDate": "2028-05-18", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三共", "machine": "PAフィーバーからくりサーカス2YF", "date": "2025-08-26", "validUntil": "2028-08-25", "certUntil": "", "number": "410768", "count": 1, "threeMonthDate": "2028-05-25", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三共", "machine": "PAフィーバーダンまち2YG", "date": "2025-08-26", "validUntil": "2028-08-25", "certUntil": "", "number": "4P1769", "count": 1, "threeMonthDate": "2028-05-25", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "藤商事", "machine": "P防振り 極振り129verFVZ", "date": "2025-08-26", "validUntil": "2028-08-25", "certUntil": "", "number": "510561", "count": 1, "threeMonthDate": "2028-05-25", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ビスティ", "machine": "e新世紀エヴァンゲリオン17 はじまりの記憶R", "date": "2025-08-26", "validUntil": "2028-08-25", "certUntil": "", "number": "5P0685", "count": 22, "threeMonthDate": "2028-05-25", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "オッケー．", "machine": "P冬のソナタMyMemoryMA2", "date": "2025-09-02", "validUntil": "2028-09-01", "certUntil": "", "number": "5P0292", "count": 1, "threeMonthDate": "2028-06-01", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三洋物産", "machine": "PA海物語極ジャパンHBD", "date": "2025-09-09", "validUntil": "2028-09-08", "certUntil": "", "number": "5P0531", "count": 5, "threeMonthDate": "2028-06-08", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サミー", "machine": "e真北斗無双5夢幻闘双SCEA", "date": "2025-09-09", "validUntil": "2028-09-08", "certUntil": "", "number": "510595", "count": 2, "threeMonthDate": "2028-06-08", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ニューギン", "machine": "PA野生の王国6N2", "date": "2025-09-16", "validUntil": "2028-09-15", "certUntil": "", "number": "510406", "count": 3, "threeMonthDate": "2028-06-15", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "マルホン工業", "machine": "PファインプレーH3", "date": "2025-09-16", "validUntil": "2028-09-15", "certUntil": "", "number": "5P1020", "count": 2, "threeMonthDate": "2028-06-15", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "京楽産業.", "machine": "eアズールレーンTHE ANIMATION2K6", "date": "2025-09-16", "validUntil": "2028-09-15", "certUntil": "", "number": "5P0983", "count": 2, "threeMonthDate": "2028-06-15", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "京楽産業.", "machine": "eソードアート・オンライン～閃光の軌跡～99Ver．K1", "date": "2025-09-16", "validUntil": "2028-09-15", "certUntil": "", "number": "4P1693", "count": 1, "threeMonthDate": "2028-06-15", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "オレンジ", "machine": "e地獄少女7500Ver．RHZ", "date": "2025-09-16", "validUntil": "2028-09-15", "certUntil": "", "number": "510656", "count": 3, "threeMonthDate": "2028-06-15", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "アムテックス", "machine": "eバキ2LBM4", "date": "2025-09-30", "validUntil": "2028-09-29", "certUntil": "", "number": "510625", "count": 1, "threeMonthDate": "2028-06-29", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "銀座", "machine": "L スマスロ化物語 KH", "date": "2025-10-07", "validUntil": "2028-10-06", "certUntil": "", "number": "530641", "count": 5, "threeMonthDate": "2028-07-06", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "銀座", "machine": "L スマスロ北斗の拳 転生の章2 MW", "date": "2025-10-07", "validUntil": "2028-10-06", "certUntil": "", "number": "5S1206", "count": 20, "threeMonthDate": "2028-07-06", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サミー", "machine": "e北斗の拳11暴凶星SHEF", "date": "2025-10-07", "validUntil": "2028-10-06", "certUntil": "", "number": "5P1070", "count": 12, "threeMonthDate": "2028-07-06", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三共", "machine": "PAフィーバーうたわれるものY", "date": "2025-10-14", "validUntil": "2028-10-13", "certUntil": "", "number": "5P0353", "count": 2, "threeMonthDate": "2028-07-13", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サンスリー", "machine": "PA清流物語4HBB", "date": "2025-10-14", "validUntil": "2028-10-13", "certUntil": "", "number": "510662", "count": 4, "threeMonthDate": "2028-07-13", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三共", "machine": "Pフィーバー彼女、お借りしますLR", "date": "2025-10-14", "validUntil": "2028-10-13", "certUntil": "", "number": "5P0526", "count": 2, "threeMonthDate": "2028-07-13", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "アムテックス", "machine": "LB不二子M2", "date": "2025-10-21", "validUntil": "2028-10-20", "certUntil": "", "number": "5S1046", "count": 2, "threeMonthDate": "2028-07-20", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "エレコ", "machine": "LB／スマスロサンダーVHA", "date": "2025-10-21", "validUntil": "2028-10-20", "certUntil": "", "number": "5S0895", "count": 5, "threeMonthDate": "2028-07-20", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ビスティ", "machine": "Pゴジラ対エヴァンゲリオン2LV", "date": "2025-10-21", "validUntil": "2028-10-20", "certUntil": "", "number": "5P1168", "count": 2, "threeMonthDate": "2028-07-20", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ビスティ", "machine": "eゴジラ対エヴァンゲリオン2TR", "date": "2025-10-21", "validUntil": "2028-10-20", "certUntil": "", "number": "510468", "count": 2, "threeMonthDate": "2028-07-20", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "三共", "machine": "L炎炎ノ消防隊2", "date": "2025-10-28", "validUntil": "2028-10-27", "certUntil": "", "number": "530634", "count": 6, "threeMonthDate": "2028-07-27", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "パオン・ディーピー", "machine": "L／スマスロ秘宝伝／PA7", "date": "2025-10-28", "validUntil": "2028-10-27", "certUntil": "", "number": "5S0926", "count": 2, "threeMonthDate": "2028-07-27", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "アクロス", "machine": "L／ハナビ／KM", "date": "2025-10-28", "validUntil": "2028-10-27", "certUntil": "", "number": "530543", "count": 6, "threeMonthDate": "2028-07-27", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ディ・ライト", "machine": "P閃乱カグラLTN－FS", "date": "2025-10-28", "validUntil": "2028-10-27", "certUntil": "", "number": "510677", "count": 1, "threeMonthDate": "2028-07-27", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ジェイビー", "machine": "eフィーバーバスタードG", "date": "2025-10-28", "validUntil": "2028-10-27", "certUntil": "", "number": "510640", "count": 1, "threeMonthDate": "2028-07-27", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "大都技研", "machine": "e／吉宗極乗3000ver／L06", "date": "2025-10-28", "validUntil": "2028-10-27", "certUntil": "", "number": "510666", "count": 1, "threeMonthDate": "2028-07-27", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "サミー", "machine": "L スマスロ攻殻機動隊 ZS", "date": "2025-11-04", "validUntil": "2028-11-03", "certUntil": "", "number": "5S1282", "count": 1, "threeMonthDate": "2028-08-03", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "山佐", "machine": "Lパチスロ鉄拳6YD01H", "date": "2025-11-04", "validUntil": "2028-11-03", "certUntil": "", "number": "5S1078", "count": 3, "threeMonthDate": "2028-08-03", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ゼクロスクリエイティブ", "machine": "LアニマルスロットドッチZT", "date": "2025-11-18", "validUntil": "2028-11-17", "certUntil": "", "number": "530564", "count": 1, "threeMonthDate": "2028-08-17", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ニューギン", "machine": "PA乗物娘2N", "date": "2025-11-18", "validUntil": "2028-11-17", "certUntil": "", "number": "5P0492", "count": 1, "threeMonthDate": "2028-08-17", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "アムテックス", "machine": "P戦国乙女7L0YU1", "date": "2025-11-25", "validUntil": "2028-11-24", "certUntil": "", "number": "5P0670", "count": 2, "threeMonthDate": "2028-08-24", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "平和", "machine": "P黄門ちゃま9ME2", "date": "2025-11-25", "validUntil": "2028-11-24", "certUntil": "", "number": "5P1014", "count": 2, "threeMonthDate": "2028-08-24", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "タイヨーエレック", "machine": "L 甲鉄城のカバネリ 海門決戦 XX", "date": "2025-12-02", "validUntil": "2028-12-01", "certUntil": "", "number": "5S1358", "count": 20, "threeMonthDate": "2028-09-01", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "オリンピア", "machine": "L範馬刃牙L5", "date": "2025-12-02", "validUntil": "2028-12-01", "certUntil": "", "number": "5S1472", "count": 1, "threeMonthDate": "2028-09-01", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ジェイビー", "machine": "L機動戦士ガンダムユニコーン2jA", "date": "2025-12-09", "validUntil": "2028-12-08", "certUntil": "", "number": "5S1377", "count": 5, "threeMonthDate": "2028-09-08", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ソフィア", "machine": "P桃剣鬼神AD", "date": "2025-12-09", "validUntil": "2028-12-08", "certUntil": "", "number": "510751", "count": 1, "threeMonthDate": "2028-09-08", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "銀座", "machine": "e化物語2GSED", "date": "2025-12-09", "validUntil": "2028-12-08", "certUntil": "", "number": "510868", "count": 2, "threeMonthDate": "2028-09-08", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "銀座", "machine": "e甲鉄城のカバネリ2GFEA", "date": "2025-12-09", "validUntil": "2028-12-08", "certUntil": "", "number": "510891", "count": 1, "threeMonthDate": "2028-09-08", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "大都技研", "machine": "P／Re：ゼロから始める異世界生活season2／A10", "date": "2025-12-16", "validUntil": "2028-12-15", "certUntil": "", "number": "5P0968", "count": 1, "threeMonthDate": "2028-09-15", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "大都技研", "machine": "P／Re：ゼロから始める異世界生活season2／M04", "date": "2025-12-16", "validUntil": "2028-12-15", "certUntil": "", "number": "4P1864", "count": 1, "threeMonthDate": "2028-09-15", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ニューギン", "machine": "eリコリス・リコイルM3", "date": "2025-12-16", "validUntil": "2028-12-15", "certUntil": "", "number": "510852", "count": 6, "threeMonthDate": "2028-09-15", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サンセイアールアンドディ", "machine": "e牙狼トリプルバーストRF", "date": "2025-12-16", "validUntil": "2028-12-15", "certUntil": "", "number": "510971", "count": 3, "threeMonthDate": "2028-09-15", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "銀座", "machine": "LB 異世界かるてっと KR", "date": "2025-12-23", "validUntil": "2028-12-22", "certUntil": "", "number": "5S1513", "count": 1, "threeMonthDate": "2028-09-22", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "オッケー．", "machine": "e魔法少女まどか☆マギカ3LPM1", "date": "2025-12-23", "validUntil": "2028-12-22", "certUntil": "", "number": "5P1435", "count": 4, "threeMonthDate": "2028-09-22", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "サンスリー", "machine": "LアクダマドライブTP", "date": "2026-01-13", "validUntil": "2029-01-12", "certUntil": "", "number": "530756", "count": 1, "threeMonthDate": "2028-10-12", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ミズホ", "machine": "L／ミリオンゴッド／CX", "date": "2026-01-20", "validUntil": "2029-01-19", "certUntil": "", "number": "530692", "count": 16, "threeMonthDate": "2028-10-19", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "メーシー", "machine": "eラグナドールCMB", "date": "2026-01-20", "validUntil": "2029-01-19", "certUntil": "", "number": "510956", "count": 2, "threeMonthDate": "2028-10-19", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "タイヨーエレック", "machine": "e終末のワルキューレEREA", "date": "2026-01-20", "validUntil": "2029-01-19", "certUntil": "", "number": "511081", "count": 2, "threeMonthDate": "2028-10-19", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ジェイビー", "machine": "ｅフィーバーキン肉マン", "date": "2026-01-20", "validUntil": "2029-01-19", "certUntil": "", "number": "5P1492", "count": 13, "threeMonthDate": "2028-10-19", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "エンターライズ", "machine": "LバイオハザードRE：3 ZD", "date": "2026-02-03", "validUntil": "2029-02-02", "certUntil": "", "number": "5S1629", "count": 7, "threeMonthDate": "2028-11-02", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "アムテックス", "machine": "L南国育ちSPM1", "date": "2026-02-03", "validUntil": "2029-02-02", "certUntil": "", "number": "531057", "count": 3, "threeMonthDate": "2028-11-02", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "オッケー．", "machine": "P魔法少女まどか☆マギカ3MAJ1", "date": "2026-02-03", "validUntil": "2029-02-02", "certUntil": "", "number": "510753", "count": 3, "threeMonthDate": "2028-11-02", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "藤商事", "machine": "eひきこまり吸血姫の悶々FHV", "date": "2026-02-03", "validUntil": "2029-02-02", "certUntil": "", "number": "511107", "count": 3, "threeMonthDate": "2028-11-02", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "七匠", "machine": "eバイオハザード6APN", "date": "2026-02-03", "validUntil": "2029-02-02", "certUntil": "", "number": "5P1286", "count": 2, "threeMonthDate": "2028-11-02", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ジェイビー", "machine": "Lからくりサーカス2jG", "date": "2026-02-10", "validUntil": "2029-02-09", "certUntil": "", "number": "5S1811", "count": 11, "threeMonthDate": "2028-11-09", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "アムテックス", "machine": "LタクトオーパスM1", "date": "2026-02-10", "validUntil": "2029-02-09", "certUntil": "", "number": "5S1493", "count": 2, "threeMonthDate": "2028-11-09", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "大都技研", "machine": "L／真打吉宗／A1", "date": "2026-02-10", "validUntil": "2029-02-09", "certUntil": "", "number": "530504", "count": 4, "threeMonthDate": "2028-11-09", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三洋物産", "machine": "PAスーパー海物語IN沖縄6RBD", "date": "2026-02-10", "validUntil": "2029-02-09", "certUntil": "", "number": "5P1699", "count": 10, "threeMonthDate": "2028-11-09", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "三共", "machine": "PAフィーバークィーンⅡYS", "date": "2026-02-10", "validUntil": "2029-02-09", "certUntil": "", "number": "5P1442", "count": 2, "threeMonthDate": "2028-11-09", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サンスリー", "machine": "eギンパラVIVAFESTAHTA2", "date": "2026-02-10", "validUntil": "2029-02-09", "certUntil": "", "number": "5P1714", "count": 3, "threeMonthDate": "2028-11-09", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "アムテックス", "machine": "eルパン三世VSキャッツアイLBM6", "date": "2026-02-10", "validUntil": "2029-02-09", "certUntil": "", "number": "5P1547", "count": 2, "threeMonthDate": "2028-11-09", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "銀座", "machine": "L ビッグドリーム KR", "date": "2026-02-17", "validUntil": "2029-02-16", "certUntil": "", "number": "531040", "count": 4, "threeMonthDate": "2028-11-16", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "オレンジ", "machine": "eとある魔術の禁書目録　一方通行 最狂RRA", "date": "2026-02-17", "validUntil": "2029-02-16", "certUntil": "", "number": "5P1881", "count": 1, "threeMonthDate": "2028-11-16", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ディ・ライト", "machine": "eカケグルイ～生か死か～LTT－KR", "date": "2026-02-24", "validUntil": "2029-02-23", "certUntil": "", "number": "511222", "count": 3, "threeMonthDate": "2028-11-23", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ニューギン", "machine": "PA花の慶次～傾奇一転N", "date": "2026-03-03", "validUntil": "2029-03-02", "certUntil": "", "number": "5P0913", "count": 3, "threeMonthDate": "2028-12-02", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "高尾", "machine": "eハイスクールオブザデッド3V1A", "date": "2026-03-03", "validUntil": "2029-03-02", "certUntil": "", "number": "510835", "count": 1, "threeMonthDate": "2028-12-02", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "ユニバーサルブロス", "machine": "LバーディーウイングBC", "date": "2026-03-10", "validUntil": "2029-03-09", "certUntil": "", "number": "5S1538", "count": 2, "threeMonthDate": "2028-12-09", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "メーシー", "machine": "eメイヒテンセイCMP", "date": "2026-03-10", "validUntil": "2029-03-09", "certUntil": "", "number": "5P1957", "count": 2, "threeMonthDate": "2028-12-09", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ジェイビー", "machine": "e東京喰種MW", "date": "2026-03-10", "validUntil": "2029-03-09", "certUntil": "", "number": "510747", "count": 2, "threeMonthDate": "2028-12-09", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "コナミアミューズメント", "machine": "L戦国コレクション6KS", "date": "2026-03-17", "validUntil": "2029-03-16", "certUntil": "", "number": "5S1589", "count": 5, "threeMonthDate": "2028-12-16", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "オリンピア", "machine": "L戦国乙女5L8", "date": "2026-03-17", "validUntil": "2029-03-16", "certUntil": "", "number": "6S0006", "count": 12, "threeMonthDate": "2028-12-16", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "平和", "machine": "eガールズ＆パンツァー3LBH7", "date": "2026-03-17", "validUntil": "2029-03-16", "certUntil": "", "number": "5P1750", "count": 1, "threeMonthDate": "2028-12-16", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ニューギン", "machine": "eベルセルク無双2HM4", "date": "2026-03-17", "validUntil": "2029-03-16", "certUntil": "", "number": "5P1859", "count": 1, "threeMonthDate": "2028-12-16", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "EXCITE", "machine": "e無職転生～異世界行ったら本気だす～H2E", "date": "2026-03-17", "validUntil": "2029-03-16", "certUntil": "", "number": "511128", "count": 10, "threeMonthDate": "2028-12-16", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サンセイアールアンドディ", "machine": "e結城友奈は勇者であるMP", "date": "2026-03-17", "validUntil": "2029-03-16", "certUntil": "", "number": "511230", "count": 1, "threeMonthDate": "2028-12-16", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "山佐ネクスト", "machine": "LBケロット5ND05H", "date": "2026-03-24", "validUntil": "2029-03-23", "certUntil": "", "number": "5S1696", "count": 3, "threeMonthDate": "2028-12-23", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "山佐ネクスト", "machine": "Lパチスロスーパーリオエース2ND02H", "date": "2026-03-24", "validUntil": "2029-03-23", "certUntil": "", "number": "5S1634", "count": 6, "threeMonthDate": "2028-12-23", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "京楽産業.", "machine": "eライザのアトリエK3", "date": "2026-03-24", "validUntil": "2029-03-23", "certUntil": "", "number": "5P1848", "count": 1, "threeMonthDate": "2028-12-23", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "パオン・ディーピー", "machine": "L／ソードアート・オンラインⅡ／PA1", "date": "2026-03-31", "validUntil": "2029-03-30", "certUntil": "", "number": "531088", "count": 8, "threeMonthDate": "2028-12-30", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "大都技研", "machine": "e／ガンゲイル・オンライン／M08", "date": "2026-03-31", "validUntil": "2029-03-30", "certUntil": "", "number": "5P1793", "count": 2, "threeMonthDate": "2028-12-30", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "高尾", "machine": "P織田信奈の野望全国版V4A", "date": "2026-04-07", "validUntil": "2029-04-06", "certUntil": "", "number": "5P1015", "count": 1, "threeMonthDate": "2029-01-06", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "ディ・ライト", "machine": "e虚構推理MHJT", "date": "2026-04-14", "validUntil": "2029-04-13", "certUntil": "", "number": "610122", "count": 1, "threeMonthDate": "2029-01-13", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "豊丸産業", "machine": "P遊moreLTエガブレイブAX4", "date": "2026-04-21", "validUntil": "2029-04-20", "certUntil": "", "number": "610163", "count": 2, "threeMonthDate": "2029-01-20", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "サンスリー", "machine": "e魔法少女リリカルなのはHTEZ2", "date": "2026-04-21", "validUntil": "2029-04-20", "certUntil": "", "number": "6P0220", "count": 2, "threeMonthDate": "2029-01-20", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "大都技研", "machine": "e／ワールドダイスター／L04", "date": "2026-04-28", "validUntil": "2029-04-27", "certUntil": "", "number": "610055", "count": 3, "threeMonthDate": "2029-01-27", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "タイヨーエレック", "machine": "e東京リベンジャーズ聖夜決戦編EREC", "date": "2026-05-12", "validUntil": "2029-05-11", "certUntil": "", "number": "6P0264", "count": 4, "threeMonthDate": "2029-02-11", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "検定機", "maker": "オッケー．", "machine": "e必殺仕事人ⅥM2", "date": "2026-05-19", "validUntil": "2029-05-18", "certUntil": "", "number": "6P0012", "count": 12, "threeMonthDate": "2029-02-18", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "検定機", "maker": "エフ", "machine": "L東京喰種FT", "date": "2026-05-26", "validUntil": "2029-05-25", "certUntil": "", "number": "4S1313", "count": 6, "threeMonthDate": "2029-02-25", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "三洋物産", "machine": "P海物語E", "date": "2020-09-29", "validUntil": "2023-09-28", "certUntil": "2026-09-28", "number": "0P0828", "count": 5, "threeMonthDate": "2023-06-28", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "三共", "machine": "PAフィーバー真花月2Y", "date": "2020-10-06", "validUntil": "2023-10-05", "certUntil": "2026-10-15", "number": "0P0815", "count": 1, "threeMonthDate": "2023-07-05", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "認定機", "maker": "北電子", "machine": "SマイジャグラーⅤKD", "date": "2020-11-17", "validUntil": "2023-11-16", "certUntil": "2026-11-16", "number": "9S1793", "count": 83, "threeMonthDate": "2023-08-16", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "認定機", "maker": "山佐", "machine": "SニューパルサーSP3CC", "date": "2021-02-02", "validUntil": "2024-02-01", "certUntil": "2027-02-01", "number": "0S0179", "count": 2, "threeMonthDate": "2023-11-01", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "三洋物産", "machine": "P大海物語4スペシャルSCA", "date": "2021-03-09", "validUntil": "2024-03-08", "certUntil": "2027-03-08", "number": "0P1589", "count": 10, "threeMonthDate": "2023-12-08", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "ジェイビー", "machine": "PフィーバーパワフルIII－F", "date": "2021-03-23", "validUntil": "2024-03-22", "certUntil": "2027-03-22", "number": "0P0652", "count": 1, "threeMonthDate": "2023-12-22", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "認定機", "maker": "北電子", "machine": "Sファンキージャグラー2KT", "date": "2021-04-20", "validUntil": "2024-04-19", "certUntil": "2027-04-19", "number": "0S0234", "count": 28, "threeMonthDate": "2024-01-19", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "認定機", "maker": "エレコ", "machine": "S／新ハナビR／HA", "date": "2021-05-18", "validUntil": "2024-05-17", "certUntil": "2027-05-17", "number": "1S0226", "count": 4, "threeMonthDate": "2024-02-17", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "大一商会", "machine": "P中森明菜・歌姫伝説4KD－TJ", "date": "2021-05-25", "validUntil": "2024-05-24", "certUntil": "2027-05-24", "number": "1P0191", "count": 2, "threeMonthDate": "2024-02-24", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "認定機", "maker": "サミー", "machine": "S ディスクアップ2 ZF", "date": "2021-08-03", "validUntil": "2024-08-02", "certUntil": "2027-08-02", "number": "0S0593", "count": 4, "threeMonthDate": "2024-05-02", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "ニューギン", "machine": "P真・花の慶次2M3－VC", "date": "2021-08-10", "validUntil": "2024-08-09", "certUntil": "2027-08-09", "number": "1P0681", "count": 1, "threeMonthDate": "2024-05-09", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "ビスティ", "machine": "P新世紀エヴァンゲリオン15 未来への咆哮", "date": "2021-08-17", "validUntil": "2024-08-16", "certUntil": "2027-08-16", "number": "1P0653", "count": 29, "threeMonthDate": "2024-05-16", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "ニューギン", "machine": "PA野生の王国5 N－K", "date": "2021-09-14", "validUntil": "2024-09-13", "certUntil": "2027-09-13", "number": "1P0836", "count": 1, "threeMonthDate": "2024-06-13", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "ニューギン", "machine": "P009 RE：CYBORG N3－K", "date": "2021-09-28", "validUntil": "2024-09-27", "certUntil": "2027-09-27", "number": "1P0971", "count": 1, "threeMonthDate": "2024-06-27", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "ニューギン", "machine": "PA真・花の慶次2N2－X1", "date": "2021-09-28", "validUntil": "2024-09-27", "certUntil": "2027-09-27", "number": "0P0772", "count": 1, "threeMonthDate": "2024-06-27", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "認定機", "maker": "エレコ", "machine": "S／バーサスリヴァイズ／HS", "date": "2021-10-12", "validUntil": "2024-10-11", "certUntil": "2027-10-11", "number": "1S1163", "count": 4, "threeMonthDate": "2024-07-11", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "サンスリー", "machine": "PAギンパラ夢幻カーニバルHBA", "date": "2021-12-07", "validUntil": "2024-12-06", "certUntil": "2027-12-06", "number": "1P1000", "count": 1, "threeMonthDate": "2024-09-06", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "銀座", "machine": "P真北斗無双3ジャギの逆襲GEE", "date": "2021-12-07", "validUntil": "2024-12-06", "certUntil": "2027-12-06", "number": "1P1193", "count": 2, "threeMonthDate": "2024-09-06", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "サミー", "machine": "P真北斗無双FWQG", "date": "2021-12-07", "validUntil": "2024-12-06", "certUntil": "2027-12-06", "number": "1P1264", "count": 1, "threeMonthDate": "2024-09-06", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "三洋物産", "machine": "PA新海物語ARBB", "date": "2022-06-07", "validUntil": "2025-06-06", "certUntil": "2028-06-06", "number": "210053", "count": 15, "threeMonthDate": "2025-03-06", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "認定機", "maker": "北電子", "machine": "SハッピージャグラーVⅢEA", "date": "2022-07-05", "validUntil": "2025-07-04", "certUntil": "2027-07-04", "number": "2S0196", "count": 15, "threeMonthDate": "2025-04-04", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "ニューギン", "machine": "Pデビルマン黄金黙示録N－K1 YT250", "date": "2022-09-13", "validUntil": "2025-09-12", "certUntil": "2028-09-12", "number": "1P1539", "count": 3, "threeMonthDate": "2025-06-12", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "大一商会", "machine": "P天才バカボン6FD－RS", "date": "2022-09-20", "validUntil": "2025-09-19", "certUntil": "2028-09-19", "number": "1P1094", "count": 1, "threeMonthDate": "2025-06-19", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "三洋物産", "machine": "PAスーパー海物語IN沖縄5YBA", "date": "2022-10-11", "validUntil": "2025-10-10", "certUntil": "2028-10-10", "number": "2P0057", "count": 3, "threeMonthDate": "2025-07-10", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "認定機", "maker": "ミズホ", "machine": "S／沖ドキ！GOLD／LS", "date": "2022-11-01", "validUntil": "2025-10-31", "certUntil": "2028-10-31", "number": "2S1205", "count": 5, "threeMonthDate": "2025-07-31", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "ビスティ", "machine": "P宇宙戦艦ヤマト2202 ONLY ONE YR", "date": "2022-11-08", "validUntil": "2025-11-07", "certUntil": "2028-11-07", "number": "2P0416", "count": 3, "threeMonthDate": "2025-08-07", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "アムテックス", "machine": "P戦国乙女レジェンドバトル9YU1Y", "date": "2022-11-08", "validUntil": "2025-11-07", "certUntil": "2028-11-07", "number": "2P0679", "count": 1, "threeMonthDate": "2025-08-07", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "三洋物産", "machine": "P大海物語5MTE2", "date": "2022-12-06", "validUntil": "2025-12-05", "certUntil": "2028-12-05", "number": "210280", "count": 10, "threeMonthDate": "2025-09-05", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "認定機", "maker": "タイヨーエレック", "machine": "L パチスロ北斗の拳AD XR", "date": "2023-01-10", "validUntil": "2026-01-09", "certUntil": "2029-01-09", "number": "2S1502", "count": 21, "threeMonthDate": "2025-10-09", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "サミー", "machine": "P北斗の拳暴凶星SFPA", "date": "2023-01-10", "validUntil": "2026-01-09", "certUntil": "2029-01-09", "number": "2P1336", "count": 11, "threeMonthDate": "2025-10-09", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "認定機", "maker": "北電子", "machine": "Sゴーゴージャグラー3KA", "date": "2023-01-24", "validUntil": "2026-01-23", "certUntil": "2029-01-23", "number": "2S0743", "count": 14, "threeMonthDate": "2025-10-23", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "三洋物産", "machine": "PA大海物語5ARBC", "date": "2023-03-28", "validUntil": "2026-03-27", "certUntil": "2029-03-27", "number": "210400", "count": 50, "threeMonthDate": "2025-12-27", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "アムテックス", "machine": "P銀河鉄道999NJL0YU1Y", "date": "2023-04-04", "validUntil": "2026-04-03", "certUntil": "2029-04-03", "number": "2P1248", "count": 2, "threeMonthDate": "2026-01-03", "threeMonthTarget": false, "expired": false}, {"type": "パチンコ", "category": "認定機", "maker": "三共", "machine": "PフィーバーからくりサーカスY", "date": "2023-06-20", "validUntil": "2026-06-19", "certUntil": "", "number": "2P0473", "count": 1, "threeMonthDate": "2026-03-19", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "認定申請中", "maker": "オリンピアエステート", "machine": "L戦国乙女4S3", "date": "2023-07-18", "validUntil": "2026-07-17", "certUntil": "", "number": "3S0520", "count": 2, "threeMonthDate": "2026-04-17", "threeMonthTarget": false, "expired": false}, {"type": "スロット", "category": "認定申請中", "maker": "山佐", "machine": "Lモンキーターン5CE", "date": "2023-09-12", "validUntil": "2026-09-11", "certUntil": "", "number": "3S0772", "count": 19, "threeMonthDate": "2026-06-11", "threeMonthTarget": true, "expired": false}, {"type": "スロット", "category": "認定申請中", "maker": "北電子", "machine": "SジャグラーガールズSS－KH", "date": "2023-09-12", "validUntil": "2026-09-11", "certUntil": "", "number": "330257", "count": 9, "threeMonthDate": "2026-06-11", "threeMonthTarget": true, "expired": false}, {"type": "スロット", "category": "認定申請中", "maker": "北電子", "machine": "SミスタージャグラーKK", "date": "2023-09-12", "validUntil": "2026-09-11", "certUntil": "", "number": "3S0174", "count": 5, "threeMonthDate": "2026-06-11", "threeMonthTarget": true, "expired": false}, {"type": "パチンコ", "category": "認定申請中", "maker": "三洋物産", "machine": "P大海物語5HCL", "date": "2023-09-19", "validUntil": "2026-09-18", "certUntil": "", "number": "310379", "count": 18, "threeMonthDate": "2026-06-18", "threeMonthTarget": true, "expired": false}, {"type": "パチンコ", "category": "認定申請中", "maker": "大都技研", "machine": "e Re：ゼロから始める異世界生活 season2M13", "date": "2023-09-19", "validUntil": "2026-09-18", "certUntil": "", "number": "310353", "count": 2, "threeMonthDate": "2026-06-18", "threeMonthTarget": true, "expired": false}, {"type": "パチンコ", "category": "認定申請中", "maker": "ビスティ", "machine": "Pシン・エヴァンゲリオンX", "date": "2023-09-26", "validUntil": "2026-09-25", "certUntil": "", "number": "3P0912", "count": 1, "threeMonthDate": "2026-06-25", "threeMonthTarget": true, "expired": false}, {"type": "スロット", "category": "認定申請中", "maker": "ミズホ", "machine": "S／クランキークレスト／CR", "date": "2023-09-26", "validUntil": "2026-09-25", "certUntil": "", "number": "330208", "count": 2, "threeMonthDate": "2026-06-25", "threeMonthTarget": true, "expired": false}];let data=JSON.parse(localStorage.getItem('certMachineData')||'null')||initial;let current='すべて';
-const tabs=['すべて','認定機','認定申請中','検定機','3か月前対象','期限切れ'];
-function norm(s){s=(s||'').trim();if(s.startsWith('認定機'))return'認定機';if(s.startsWith('認定申請中')||s.startsWith('認定書類待ち'))return'認定申請中';if(s.startsWith('検定機'))return'検定機';return s||'未分類'}
-function parseDate(s){if(!s)return null;s=s.trim();if(/^\d+(\.\d+)?$/.test(s)){let d=new Date(Date.UTC(1899,11,30));d.setUTCDate(d.getUTCDate()+Number(s));return d.toISOString().slice(0,10)}let d=new Date(s.replace(/\./g,'/'));return isNaN(d)?null:d.toISOString().slice(0,10)}
-function minus3(iso){if(!iso)return'';let d=new Date(iso+'T00:00:00');let day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()-3);d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));return d.toISOString().slice(0,10)}
-function recount(){return {'認定機':data.filter(x=>x.category==='認定機').length,'認定申請中':data.filter(x=>x.category==='認定申請中').length,'検定機':data.filter(x=>x.category==='検定機').length,'3か月前対象':data.filter(x=>x.threeMonthTarget).length,'期限切れ':data.filter(x=>x.expired).length}}
-function setCurrent(v){current=v;document.querySelectorAll('.tab,.card').forEach(e=>e.classList.toggle('active',e.dataset.key===v));render()}
-function renderNav(){let c=recount();cards.innerHTML=['認定機','認定申請中','検定機','3か月前対象','期限切れ'].map(k=>`<div class="card ${k==='期限切れ'?'red':k==='3か月前対象'?'amber':''}" data-key="${k}" onclick="setCurrent('${k}')"><div class="label">${k}</div><div class="num">${c[k]}<small style="font-size:13px">件</small></div></div>`).join('');tabs.innerHTML=tabs.map(k=>`<button class="tab ${k===current?'active':''}" data-key="${k}" onclick="setCurrent('${k}')">${k}</button>`).join('')}
-function filt(){let q=search.value.toLowerCase(),t=type.value;let a=data.filter(x=>(!q||[x.machine,x.maker,x.number].join(' ').toLowerCase().includes(q))&&(!t||x.type===t));if(current==='認定機'||current==='認定申請中'||current==='検定機')a=a.filter(x=>x.category===current);if(current==='3か月前対象')a=a.filter(x=>x.threeMonthTarget);if(current==='期限切れ')a=a.filter(x=>x.expired);let s=sort.value;a.sort((x,y)=>s==='name'?x.machine.localeCompare(y.machine,'ja'):(s==='cert'?(x.certUntil||'9999').localeCompare(y.certUntil||'9999'):(x.validUntil||'9999').localeCompare(y.validUntil||'9999')));return a}
-function jp(d){return d?d.replace(/-/g,'/'):'—'}
-function render(){renderNav();let a=filt();summary.textContent=`${a.length}件を表示（総台数 ${a.reduce((s,x)=>s+(x.count||0),0)}台）`;body.innerHTML=a.length?a.map(x=>`<tr><td><span class="badge ${x.category==='認定機'?'b-rec':x.category==='認定申請中'?'b-app':'b-test'}">${x.category}</span></td><td>${x.type}</td><td><div>${x.maker}</div><div class="machine">${x.machine}</div></td><td>${x.count}</td><td>${jp(x.date)}</td><td>${jp(x.validUntil)}</td><td>${jp(x.threeMonthDate)}</td><td>${jp(x.certUntil)}</td><td>${x.number||'—'}</td><td>${x.expired?'<span class="badge b-exp">期限切れ</span>':x.threeMonthTarget?'<span class="badge b-soon">3か月前対象</span>':'—'}</td></tr>`).join(''):`<tr><td colspan="10" class="empty">該当データはありません</td></tr>`}
-[search,type,sort].forEach(e=>e.addEventListener('input',render));
-function esc(v){return '"'+String(v??'').replaceAll('"','""')+'"'}function downloadCSV(){let rows=[['区分','種別','メーカー','機種名','台数','検定認定年月日','有効期限','3か月前','認定期限','番号','判定'],...filt().map(x=>[x.category,x.type,x.maker,x.machine,x.count,x.date,x.validUntil,x.threeMonthDate,x.certUntil,x.number,x.expired?'期限切れ':x.threeMonthTarget?'3か月前対象':''])];let blob=new Blob(['\ufeff'+rows.map(r=>r.map(esc).join(',')).join('\r\n')],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='認定機管理_'+current+'.csv';a.click();URL.revokeObjectURL(a.href)}
-function openImport(){modal.classList.add('show')}function closeImport(){modal.classList.remove('show')}
-function importPaste(){let lines=paste.value.trim().split(/\r?\n/).map(r=>r.split('\t'));if(lines.length<2){alert('Excelの表を貼り付けてください');return}let out=[];let today='2026-07-18';for(let i=1;i<lines.length;i++){for(let z of [{o:0,type:'パチンコ'},{o:9,type:'スロット'}]){let r=lines[i],o=z.o;if(!r[o+2])continue;let cat=norm(r[o]),valid=parseDate(r[o+4]),cert=parseDate(r[o+5]),th=minus3(valid);out.push({category:cat,type:z.type,maker:r[o+1]||'',machine:r[o+2]||'',date:parseDate(r[o+3])||'',validUntil:valid||'',certUntil:cert||'',number:r[o+6]||'',count:Number(r[o+7])||0,threeMonthDate:th,threeMonthTarget:!!(valid&&th<=today&&today<=valid),expired:!!(cat==='認定機'&&cert&&cert<today)})}}if(!out.length){alert('読み取れるデータがありません');return}data=out;localStorage.setItem('certMachineData',JSON.stringify(data));paste.value='';closeImport();current='すべて';render();alert(out.length+'件を更新しました')}
-render();
-</script></body></html>
+window.onload=function(){
+  setTimeout(function(){ window.print(); }, 150);
+};
+<\/script>
+
+
+
+
+
+
+<script id="delivery-handlers">
+(function(){
+ const t=document.getElementById('tabDelivery'); if(t)t.onclick=showDelivery;
+ ['deliveryTo','deliveryDate','deliverySubject','deliveryName'].forEach(id=>{const e=document.getElementById(id);if(e)e.addEventListener('change',saveDelivery)});
+})();
+</script>
+
+<script id="delivery-tab-handler">
+(function(){
+  const btn=document.getElementById('tabDelivery');
+  if(!btn) return;
+  btn.addEventListener('click', function(e){
+    e.preventDefault();
+    if(typeof showDelivery==='function'){
+      showDelivery();
+    }else{
+      const ids=['numberPane','machinePane','certPane','checkPanel','popPanel'];
+      ids.forEach(id=>document.getElementById(id)?.classList.add('hidden'));
+      document.getElementById('deliveryPanel')?.classList.remove('hidden');
+      ['tabNumbers','tabMachines','tabCert','tabCheck','tabPop'].forEach(id=>document.getElementById(id)?.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  });
+})();
+</script>
+
+
+<script id="delivery-excel-export">
+(function(){
+ const DELIVERY_TEMPLATE_B64='UEsDBBQABgAIAAAAIQB0NlqmegEAAIQFAAATAAgCW0NvbnRlbnRfVHlwZXNdLnhtbCCiBAIooAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsVM1OAjEQvpv4DpteDVvwYIxh4YB6VBLwAWo7sA3dtukMCG/vbEFiDEIIXLbZtvP9TGemP1w3rlhBQht8JXplVxTgdTDWzyvxMX3tPIoCSXmjXPBQiQ2gGA5ub/rTTQQsONpjJWqi+CQl6hoahWWI4PlkFlKjiH/TXEalF2oO8r7bfZA6eAJPHWoxxKD/DDO1dFS8rHl7q+TTelGMtvdaqkqoGJ3VilioXHnzh6QTZjOrwQS9bBi6xJhAGawBqHFlTJYZ0wSI2BgKeZAzgcPzSHeuSo7MwrC2Ee/Y+j8M7cn/rnZx7/wcyRooxirRm2rYu1w7+RXS4jOERXkc5NzU5BSVjbL+R/cR/nwZZV56VxbS+svAJ3QQ1xjI/L1cQoY5QYi0cYDXTnsGPcVcqwRmQly986sL+I19QodWTo9qLpErJ2GPe4yfW3qcQkSeGgnOF/DTom10JzIQJLKwb9JDxb5n5JFzsWNoZ5oBc4Bb5hk6+AYAAP//AwBQSwMEFAAGAAgAAAAhALVVMCP0AAAATAIAAAsACAJfcmVscy8ucmVscyCiBAIooAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACskk1PwzAMhu9I/IfI99XdkBBCS3dBSLshVH6ASdwPtY2jJBvdvyccEFQagwNHf71+/Mrb3TyN6sgh9uI0rIsSFDsjtnethpf6cXUHKiZylkZxrOHEEXbV9dX2mUdKeSh2vY8qq7iooUvJ3yNG0/FEsRDPLlcaCROlHIYWPZmBWsZNWd5i+K4B1UJT7a2GsLc3oOqTz5t/15am6Q0/iDlM7NKZFchzYmfZrnzIbCH1+RpVU2g5abBinnI6InlfZGzA80SbvxP9fC1OnMhSIjQS+DLPR8cloPV/WrQ08cudecQ3CcOryPDJgosfqN4BAAD//wMAUEsDBBQABgAIAAAAIQAiQl8JowMAANYIAAAPAAAAeGwvd29ya2Jvb2sueG1srFVdb6M4FH1faf8Da/WVgvkKQSWjEEBbqR1VbaZ9qRS54BSrgFljmlTV/Pe9hiRNJqNRtrMRsfHX8bn3nnu5+LKuSu2VipbxOkT43EQarTOes/o5RN/mqe4jrZWkzknJaxqiN9qiL5M//7hYcfHyxPmLBgB1G6JCyiYwjDYraEXac97QGlaWXFREwlA8G20jKMnbglJZlYZlmp5REVajASEQp2Dw5ZJlNOZZV9FaDiCClkQC/bZgTbtFq7JT4CoiXrpGz3jVAMQTK5l860GRVmXB5XPNBXkqwew1drW1gMeDPzahsbY3wdLRVRXLBG/5Up4DtDGQPrIfmwbGBy5YH/vgNCTHEPSVqRjuWAnvk6y8HZb3AYbN30bDIK1eKwE475No7o6bhSYXS1bS+0G6Gmmar6RSkSqRVpJWJjmTNA/RCIZ8RQ8mRNdEHSth1TZty0PGZCfnG6HldEm6Us5ByFt4yAzPG1uu2gnCmJaSippIOuO1BB1u7PpdzfXYs4KDwrVb+k/HBIXEAn2BrdCSLCBP7Q2RhdaJMkSz4PFbC+Y/shVpmSSWjR9j2r5I3jzuiZMcZ8J/kCfJlM0GGD0QG95/dADwE8FWgjdSaPB+GV9BGO7IKwQFQp9vcvYSvI7tRZ2JAC/eZ1M/caN4qvuek+hOEvu673qpbo6Vu9PEt7D9HYwRXpBx0sliE28FHSIHgnu0dE3W2xVsBh3LP2i8m5ufrvofmu3ad2Wwqmz3jK7aD2WoobZ+YHXOVyHSsQmV8e1wuOoXH1guixBZtuVCBg1zf1P2XABjbDlqEjJAMQvRuzse+25sxro/G810x7MTeEsc3Yx9e+qbo8idjnpGxh6lvoYCtb7X6l73d6quYijWqu+djDQRqDvEZY77IG6PgcBZTXOVLwCyN9pALdZlXZ3fCFbLxRRqtsqgjJT9DQrZRJPhtr/OojM7OLs6s0YXxh4OiOTwDjidQWaprqc2xqY1VpzoWl61su9B1Awcgh1zOjLH4IHEdnXHH1u679iWPnNiK3FHSZxErlKE+uoE/0ft7XMr2H7OFMuCCDkXJHuBj+AtXUakBQkPLgS++2Qj149MGyg6KU51B49NPYo8R3fj1HZHOJ4lbvpBVpm//GTl843+NCWyg6qgCkI/DlSbbmZ3k8thYhPOg2wPbmPl983pX228A+tLeuLm9P7EjbOv1/PrE/deJfPFQ9pL96fWGn00VNtryNjGcPIvAAAA//8DAFBLAwQUAAYACAAAACEAkgeU7AQBAAA/AwAAGgAIAXhsL19yZWxzL3dvcmtib29rLnhtbC5yZWxzIKIEASigAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAArJLLasQwDEX3hf6D0b5xMn1QhnFm0VKYbZt+gHCUOExiB1t95O9rUjrJwJBusjFIwvceibvbf3et+CQfGmcVZEkKgqx2ZWNrBe/Fy80jiMBoS2ydJQUDBdjn11e7V2qR46dgmj6IqGKDAsPcb6UM2lCHIXE92TipnO+QY+lr2aM+Yk1yk6YP0s81ID/TFIdSgT+UtyCKoY/O/2u7qmo0PTv90ZHlCxYy8NDGBUSBviZW8FsnkRHkZfvNmvYcz0KT+1jK8c2WGLI1Gb6cPwZDxBPHqRXkOFmEuV8TRmOrnww2doI5tZYucrdqKAx6Kt/Yx8zPszFv/8HIs9jnPwAAAP//AwBQSwMEFAAGAAgAAAAhANGSE+8KCwAA0ysAABgAAAB4bC93b3Jrc2hlZXRzL3NoZWV0MS54bWzEWm2P27gR/l6g/8EQ8uH6wWvr1baw3oMtv6xk5y7tJlf0o+KV10Jsyydrs8kV/e99KJIiKTJ2ctiih1x283BmNHw4MxxRvP35y2Hf+ZyV57w4ji37pm91suOmeMyPT2Prw/tFd2h1zlV6fEz3xTEbW1+zs/Xz3V//cvtSlJ/OuyyrOrBwPI+tXVWdwl7vvNllh/R8U5yyI0a2RXlIK/yzfOqdT2WWPtZKh33P6feD3iHNjxa1EJbfY6PYbvNNNis2z4fsWFEjZbZPK/h/3uWnM7d22HyPuUNafno+dTfF4QQTH/N9Xn2tjVqdwyaMn45FmX7cY95fbC/ddL6U+OPgf5c/psa1Jx3yTVmci211A8s96rM+/VFv1Es3jSV9/t9lxvZ6ZfY5JwsoTDl/ziXbb2w5wpj7J40FjTFCVxk+549j69+DqeMNvFm/688jt+sNRm53uIhG3ZHvDAfeyJt5fe8/1t1tHSfvyrvbU/qUPWTVh9O7srPNq/fFOwCIVat3d9trpB5zBAQhoVNm27E1dcIHtxapJX7Ls5czs0l+71Tpx4dsn22qDD7ZVoeE88ei+EQGY0B94kEtQEymmyr/nEXZfj+2fhkhI36vH4JfGx+IIvdHftqiTgC4/pht0+d99Y/i5T7Ln3YVHovcquMnfPw6y84bBDQefOP5xOqm2MNh/N055MhMLMch/VL/fMkfq93YcoOb/mgQ+IHjW53N87kqDv+kI5QZaqCe/Syt0rvbsnjpIMZg6XxKScY6oY25UE9ugr78Hxipdvnm07QgfhrdrL1kNrG+r2QTUyZOTonFseUP4MfYOmMxPt/1b3ufwfCGiURUxAOJjchAFZk1IoRQYnfO7JL5cbuOqrSgIgGJgG1nk5L5373/dTb5109/u+1tiSceOB+pWkuqRUOuftS9hsQakmjISkPWzJ96VWvLD0Aa720x5x5Wo1lm79WXhFjEkgzr6CRkRhRx6yyoPZtpyJwiXr/RWlLEkZfWVcm8ZyLiUbGGJBqy0pA1Q2iayuwgZZSANachD0Yi3QpGuxWMVISkoliZVojMGpkmGhkSCHIYAscbO16LHM1MrCGJhqw0ZC0/XAmd4IfIIdIgRwRBRBFwwec505A5Q6SZM0Seud+auWYm1pBEQ1YaspYfrswcMfnKdYxYVNmhiMyOhswZIrFDkQDFu4mLoMUOE3Eb2mMNSTRkpSFrhnj13iYnDWkFX2fn4IlFLKolhSJySdGQOUWkkrKgiKiQS6aEbrahq5WN90xEKMUNIpSGKseJprTSkDVFHI0+0jfI9F2uOUR6bHn4IQpKewdsZJpE05C5hiwoIsJk2Qbu20DcBpI2sGoDawlQUszGmrxyFNUmx1aAtBabepsrLiRXaKdVxWdCqCnROrTQoaUO3etQrEOJDq10aK1AKp3oZH4gqmwijoyTE8Nu72VGoVaXNONCIn/mDFI6Mru1tS+4nlzJ7NYWtzRaauXivRDiixXrUGKcTGtjWel6a2V+KuWv10HzOmgTk2jppd5Kh2YMkgrfnEuJ3XfBIF9KcF3qXodiHUqEE1IVau07K11vrXiqktd+VbhcBW3a/Nr1ZlS3mBGDfKm94JDYL+cMEnoLhkh7KleTWw6pnaZdvBASUcZeIoTxhEk5AlpxSPi55lDtg0pLu12/QgttbEEzdyoCRSSEHAHNOCQiYc4gEWcLhogAWnI1+R1Jp4U9Tto+hR53KmGQK5xacUg4teaQ3nHYP9an1+J4X5NpYV2uTAuDZFooJNNCEZkWpnaZlkZIRIsGJcxPhRYq5cq0MMhAy4916DbtdxF9IlpYCyzTwiCZFgrJtFBEpoWpXaalERK0aFDC/FRooVIKLQwy0KK07wjQK0nEumzxahrZDJJpYZBMC4VkWigi08LULtPSCAlaNChhTim0UCmFFgYZaFH69uu0sGZa1K2IHFS1awuDZFooJNNCEZkWpnaZlkZI0KJBCXNKoYU143ISMUgU5l+YInoqHPDcPXx4+xN2i3DhDPjxjmgd1RqtNPDXeaQdsJJ1FFJqNINkHikk80gRmUemdpnHRkjwqEEJOQMkvYdcoxkk88ggPbwcpaG/SkstjhotFSMGybRwSKKFQRItDJFo4WoXaRFCDS06lDBIpoVDEi0cMtCiNObXaaGNORajqdEOhRRaGCTTQiGZForItDC1y7Q0QoIWDUqYUwotVEouRlzKQIvSPF+nhTbG2BkELRTyBAczUFS/LIsknzMItZMrLjgkqFoyiLhrOlClHaAQEsTQB0KvaXWYlCvK5opDwvk1h2q3lOriKI3xdWJYYyynEYWUeGGQHC8UkuOFInK8MLXLtDRCghYNSuppqdWFQ3IasVNvQ7wojfF1WlhjLNOiN8Zo0+v9TKaFQjItFJFpaXreS9GiN8b8cXK0UCkljRgk08IgAy1KY3ydFtpKKkVXb4zJ6TXZ5mVatMaYCcm0fE9jzG1L7ws6lDBIoUVvjLmUgRalMb5Oi94YO3pjzCGZFq0xZkIyLd/TGHPbMi16Y8ykFFr0xphLGWhpN8Z//psfP7Egn28QKzglEYWZQp6AZkzKE73FnEGiTKLxqk2JSr3kakLonkOilsYcEooJg6RzlBWHxMqsuWLd+CtFGJ/vpNO0a/Ezr8VBgmSIfpCmH1wPWflUfzQ+dzbFM/m4G/joORuYfal2w2m9ZG3cD6d1OWrhkR/iBByst/CFG+JToY5PRyEOgXU8ckN8rtPxuRvio52OLwchPg0Y7Nh+OMMbrUHD9sKYHt20fF1CJ/6Gjo2ROl7afNh2ODWORBghh2OGuWCEnJEZ2MIIOSrTR3BiGJLTP9OIgxGzDsin1VWbqYv5mNYFB1nw2jSCYxNYM60BTnmgYxpB6IcksA3rgxGSiKaVC2Ctzqh2jNnQob2TNjLEiDEu7RFGjJHm9OFBnSRtaw5WjnZR2oiDERPXkQPe6B6l6YAdegTXXgVwQOqFKUYDrI+JgyU4iI0cLO0hRkwcLMFBbORgiZnGxpmiCcWIaaZLzDQ2znTpILO+MVNkFv242OYAQWXM62GIb2E6M/EwxMctUxb4iE5TvuMAByNGLh2wjP3JFJ2oHkZ/I+jMjDpLPMb4FDhm9gu5YVxJHCJgxDhLPH1tfDreDDFiima8HGHEWDmwxqT3N7CJNV4b1zjBGq+Na4w2CSPmmY4wH1MOLuF1TL3uiX0Jl6t2uNZX5Rtyt6o4VuTqUz2BR1wZ+i3d5/hJbtbxDczF/qUOdaqvJ9zG2ufnyuqk+33xMt2nx0/1raHzrniJj6fn6m12PrNLWx0CzsuyKBWQXqiiMSfuio38ycKe2KNuf2JPut4wmHSHvj/pRoNFNJv3HTcaTsldMXLL8Hmf2ndv/v7GDfEXLsU02G1P9fh/OoMlqnrdmYj7bvNRMB35Udfr96e47zZ0utOh7XSjiR8MJ/5g4UwX6hweyBwe3uCj2P9nDrQzEKvgRpNpNJktupOhu+h6zsTrjrzhvDsYLIJoYQeB7/nqDN6RGbx7gy9FF2bQWhbcdjuV+bH69UQjbleU+R8IyXQf4WJcVrKLeririnBVQaQVuST4Ni2fcsTqPtvWF+kG/WEQ2J49cB1n6HoDvLSX9OZd/8YwVhUncv1u4A37ru2Ngn7gjEYO+Wbzsahwu+4bgzvcac1wG6p/I2vhgtgQ/eO2KOC6eZB5jauNz6fOKT1l5UP+B1KJnLRhguQ3vPuABUy/zkJkGS7iYuyUYSYhuU1Zxo/0tl9zHffuvwAAAP//AwBQSwMEFAAGAAgAAAAhAKgDJRpaBwAAyiAAABMAAAB4bC90aGVtZS90aGVtZTEueG1s7Flbixs3FH4v9D8M8+74NuPLEm/wNdtkNwlZJyWPWlv2aFczMpK8G1MCJQuFvhQKaelLS9/6UEoDLbSUQn/MQkIvP6JHmrFHWsvNpZvSll3D4pG/c/TpnKOjM0dXrz2MqXeMuSAsafnlKyXfw8mIjUkybfn3hoNCw/eERMkYUZbglr/Awr+2/fZbV9GWjHCMPZBPxBZq+ZGUs61iUYxgGIkrbIYT+G3CeIwkPPJpcczRCeiNabFSKtWKMSKJ7yUoBrW3JxMywt7Z6Qdnpz+fnX7hby8n6FOYJZFCDYwo31fqsSWlseOjskKIhehS7h0j2vJhrjE7GeKH0vcoEhJ+aPkl/ecXt68W0VYmROUGWUNuoP8yuUxgfFTRc/LpwWrSIAiDWnulXwOoXMf16/1av7bSpwFoNIKVplxsnfVKN8iwBij96tDdq/eqZQtv6K+ucW6H6mPhNSjVH6zhB4MuWNHCa1CKD9fwYafZ6dn6NSjF19bw9VK7F9Qt/RoUUZIcraFLYa3aXa52BZkwuuOEN8NgUK9kynMURMMqutQUE5bITbEWo0PGBwBQQIokSTy5mOEJGkEkdxElB5x4u2QaQeDNUMIEDJcqpUGpCv/VJ9DftEfRFkaGtOIFTMTakOLjiREnM9nyb4BW34A8+/HHs8ffnz3+4ez09Ozxt9ncWpUlt4OSqSn3+1cf//H5+95v3335+5NP0qnP44WJf/7Nh89/+uWv1MOKc1M8+/Tp8++fPvvso1+/fuLQ3ubowIQPSYyFdwufeHdZDAt08McH/NUkhhEilgSKQLdDdV9GFvDWAlEXroNtE97nkGVcwOvzQ4vrfsTnkjhmvhnFFnCPMdph3GmAm2ouw8LDeTJ1T87nJu4uQseuubsosRzcn88gvRKXym6ELZp3KEokmuIES0/9xo4wdqzuASGWXffIiDPBJtJ7QLwOIk6TDMmBFUi50A6JwS8LF0FwtWWbvfteh1HXqnv42EbCtkDUQX6IqWXG62guUexSOUQxNQ2+i2TkIrm/4CMT1xcSPD3FlHn9MRbCJXObw3oNp9+EDON2+x5dxDaSS3Lk0rmLGDORPXbUjVA8c3ImSWRi3xFHEKLIu8OkC77H7B2insEPKNno7vsEW+5+cSK4B8nVpJQHiPplzh2+vI6ZvR8XdIKwK8u0eWxl1zYnzujozKdWaO9iTNEJGmPs3XvHwaDDZpbNc9I3IsgqO9gVWDeQHavqOcECe7quWU+Ru0RYIbuPp2wDn73FucSzQEmM+CbNt8DrVujCKedMpbfp6MgE3iJQAkK8OI1yW4AOI7j7m7TeiZB1dqln4Y7XBbf89zJ7DPbl4avuS5DBrywDif2lbTNE1JogD5ghggLDlW5BxHJ/LqLOVS02d8pN7E2buwEKI6veiUnywuLnXNkT/jNlj7uAuYCCx63475Q6m1LKzrkCZxPuP1jW9NA8uYPhJFnPWZdVzWVV4//vq5pNe/mylrmsZS5rGdfb1xupZfLyBSqbvMujez7xxpbPhFC6LxcU7wrd9RHwRjMewKBuR+me5KoFOIvga9ZgsnBTjrSMx5l8l8hoP0IzaA2VdQNzKjLVU+HNmICOkR7W7VR8TrfuO83jPTZOO53lsupqpiYUSObjpXA1Dl0qmaJr9bx7t1Kv+6FT3WVdElCyr0LCmMwmUXWQqC8HwQt/RUKv7EJYNB0sGkr90lVLL65MAdRWXoFXbg9e1Ft+GKQdZGjGQXk+Vn5Km8lL7yrnXKinNxmTmhEAJfYyAnJPNxXXjctTq0tD7SU8bZEwws0mYYRhBC/CWXSaLfeL9HUzd6lFT5liuRtyGvXGm/C1SiLncgNNzExBE++k5deqIdysjNCs5U+gYwxf4xnEjlBvXYhO4eplJHm64V8ns8y4kD0kotTgOumk2SAmEnOPkrjlq+WvooEmOodobuUKJIR/LbkmpJV/Gzlwuu1kPJngkTTdbowoS6ePkOHTXOH8VYu/PlhJsjm4ez8an3gHdM7vIgixsF5WBhwTARcH5dSaYwI3YatElsffuYMpS7vmVZSOoXQc0VmEshPFTOYpXCfRFR39tLKB8ZStGQy6bsKDqTpg//ap++KjWlnOSJr5mWllFXVqupPpmzvkDVb5IWqxSlO3fqcWea5rLnMdBKrzlHjBqfsSB4JBLZ/MoqYYr6dhlbOzUZvaBRYEhiVqG+y2OiOclnjdkx/kzketOiCWdaUOfH1tbt5qs4NDSB49uD+cUym0K+HOmiMo+tIbyDRtwBZ5KLMaEb55c05a/nulsB10K2G3UGqE/UJQDUqFRtiuFtphWC33w3Kp16k8goNFRnE5TK/sB3CFQRfZxb0eX7u8j5e3NFdGLC4yfTlf1MT15X254rq8H6qbed8jkHTeq1UGzWqzUys0q+1BIeh1GoVmt9Yp9Grdem/Q64aN5uCR7x1rcNCudoNav1GolbvdQlArKfqNZqEeVCrtoN5u9IP2o6yMgZWn6SOzBZhX89r+EwAA//8DAFBLAwQUAAYACAAAACEAHXkUlN4GAACKQAAADQAAAHhsL3N0eWxlcy54bWzkXE1v2zYYvg/YfxAUYKepsmzLX7NdNIndFeiGYs2AXWWZsonqw5Po1O7QS/oDdhuwHXrerTsMWFEs+zPBcs1f2EtKtqQ4jC1ZUmTsEkuU+PLhy/dbZLqPF5YpnCPXw47dE5VHFVFAtu6MsT3pid+fDaWWKHhEs8ea6dioJy6RJz7uf/5Z1yNLE72cIkQEIGF7PXFKyKwjy54+RZbmPXJmyIYnhuNaGoFbdyJ7MxdpY492sky5Wqk0ZEvDtuhT6Fj6LkQszX01n0m6Y800gkfYxGTJaImCpXeeTWzH1UYmQF0odU0XFkrDrQoLdzUIa90Yx8K663iOQR4BXdkxDKyjTbhtuS1rekgJKKejpKhypRqb+8JNSakuu+gc0+UT+117bg0t4gm6M7dJT6yumwT/ybMxrHGzIQr+qpw4Y+DT0ZdHR0df/Dh3yFf//vyHfyHKK2Kxnk1uz+v3v4U95QBHv2s4dggHejPud17Zzmt7SB8BHMBI3+p3vTfCuWZCi0JH1x3TcQUCsgQQWYutWch/4/rjx6uLP68u/rp69+7q4gN93dAsbC79x1XWf6q5HginT7Laom1MNAMaFgZBoY2yP3ocQ4MxoIABRxRWVhOvpZ94DEdlzwXYA0e2QrD7gm8Xuq+fvri5/HTzz/uby79vLj/cXH4c3BY87rxjMhZlNRPLPUQ9FacZGg90Bpvm2lbUqB5CQ78LZpUg1x7CjRBcny1noIU2eABfY9h7W96euNpSqaq7d/AcE48pislJVPeZMI6CNmyP0QKBFWvUGeEIVqrJDBf7gemNHHcMjm1lDJU20Pbb+l0TGQQ0z8WTKf0lzgz+jhxCwPr3u2OsTRxbM6l1WPWI9gSPCM6vJ1pojOcWkPVX8DY4OkhsjB37AZoEYOLTyHWIHYkzrjKm5oImLfeTrPCKqYlnXIQYrcfYEZ0v19vFmqMQOY2SnrUZA0ouT4eqB/8nlpfTnueqscmtbVlU+8GRF2gDyBQyXl7IEHH9K0j3vr+raU/rM3cCkRfouyObB+Ff6nigcAYGASvEvzoyzZc0UP3BiFUEFkYkp4d6D818aWGAXkIAHVz68a5/0+9qJp7YFrIhn0YuwTrN03W4RX4KvTD6XR7ZOpcsDa+jIH3IEbSNJihKcrjCwsgAN48dCjxYDSBos5m5PGaJhl/K2INR3AGBg7kMWOWuzK3xaKkm3fSCYpMvYDuP9+3cGiF3yCqHdFyfzTmjoNWpQG788e5Hsf/SK01WTrufN1CXKCWsDSXIn1usbLmFWyVdRLX4RYxwi2/Yt4jWXnafp+0ALK5nK72+rVH+/ZOV57ltgKaOi9+AYYq4ouTOCRbmTp+nrFGC/tHSOHrhIgMvNq1RHqgFb+pi+9WZM8TM7lJHeZ+L5bE6nAWIQOGz2Iaay/uIgBTP+teuNjtDiwPm+x7SA4IUxn1JpYcWjEP9CIOi3PSYF1zEZ5HKJfDmktwi8rx8HGQqB5EdyEgWUNtqEctoS6i3uyt3KbcF5PJ6Q2Yf0kfu5F1YIpQnysx8ImxoKC7+yAr1RgpYRoHYyAniIPON5HhSumFZS6lKOcgk/fooJo+IeXyE9szVJmOIYE7LDlHJg41BIS67tVby4GT2KEuVSXK95GH48kK9YoJ8lp+R3BFxFJ6BROLmyPpvyT/iDqiUmLdIQ0kwA/fDbPUgjMFB2IKymoKHW+6sovhDST1KY3QzK2U9oEFLOgdeUaBUBo4HslQGjgfyIAzcQSQKWWT8GSeBG99Ly5jvH0R+1S7ThzpuerVFBAv4DLFD8byUlbFCa4pZhVCFlvOyAl2oJgkEvl5+5xA4HEeP9FVV/whGqu/HhSpXlsAL9QK7AlfoVrhgsx3Xnm34/WQba4rYNMHFfhBfKfKIo9mJlwyL7XmE0VljzCOKzhpjWr+beJMrTyWycPzbmML20MKu2ciO39h+3/UWW4GeoO2J17//ev3pl0hwN5pjk2Db3zMLtdm7Owhr10uNq9uZY9gz/FOzUVFUtd6STpoDRaqrzabUGrRV6WRYa54+GSi1Wm34lh3VW1MFoONFuCWZne8j9Mg226y8hg6sGyNDm5vkbP2wJ4bX37DDd8D44K0X+NwhjERPDK+f0xN+sAsApgVu8bkHB/LgV5i7GMAPjpvt08GwKrUqxy2pXkOq1FaPTyW1fnJ8ejpsV6qVk7fhce/6HsfG2Tl32Mys1DueCYfL3WCyAfiXYVtPjNz48Bn/AHYUe7vaqDxRlYo0rFWA8Q2tJbUaNVUaqkr1tFE/HqhDNYJdTXm8vCIrin9QnYJXOwRbyMT2aq1WKxRthUWC23smIa9WQg7/iUD/PwAAAP//AwBQSwMEFAAGAAgAAAAhAJn+mFf4AwAA5wsAABQAAAB4bC9zaGFyZWRTdHJpbmdzLnhtbJxWXW/aWBB9X6n/wfJ7agxNICugqqpWWmkf+tCV9pVN3IIUTBY7q9037r1pl5KkaZO0SRu6UT4gKSQ0KGlLSdL8mOEa87R/YccfZCEyCEeyhK89HmbmnDkz0bt/pmeEP5SslsqoMVG+HRAFRZ3KTKfUpzHxl8cPxyKioOkJdToxk1GVmPiXool347d+iGqaLuC3qhYTk7o++6MkaVNJJZ3QbmdmFRXfPMlk0wkdj9mnkjabVRLTWlJR9PSMFAwEJqR0IqWKwlRmTtVjYmhCFObU1O9zyn3nQTAoxqNaKh7V47y2yZ/lo5Iej2YfJQXtt5hoBYk/lo0eB7oD7DnQz0CPbCsJzeLR2STGq6emHmWFJxlV/2kasxOleFSyvDqeW2df+KulYZ7rwE6AbQPd8+fZ2N/wciu7AX8G9o8/h5BbiUQCYwE5GLI/HCE7Xqvx05e8QfnePj9aNwsnfLeKN+3Sh/ba8WR4vP2mwovH/56/9go15ITKtoDtAf2CtQX6tSfmLhQhB4pxN7MKULx28AsP23HHNuy63gRaBtrwMAw7hpErfD3dITMtFsgB12wP2CdECljOw6XsBiq7kbJXNrTEJwwMuVYAiqR4DewQ6Degp8DOgVWBvRgVmccPfoZcLjAZGR8Lh8ciciSIR7we3vu1//nIWHd2NzsnpQ5ZMM+deg7sFCviqkd9gk4x77i1LNvVKfurDj9e5vU6pmC8a/LG4rDGqli06msCb0KxPGDJ/Ta2gYEMb+yvN+lqByUghVbjrfmxDqQKpAJkF0gZHwItAPkO5B3kaF/q11rkDGnqU00+brUPagMychvV7k9gpRvlhQqHHKbI4fNROWwUD1sXq0MgZpsWheilf+38cOnltqudqEbO+5Flvn26xFeJsV4Cssjzz4EsdKFaB7IF1Onbax3T1b+XlkixFbsdnHSd/+2a3+nTP7/Imgcb/FkJ6Aryp7O9AWTe/PsUCMblRaRrY+8I2IKFOO1t0wFxLQE99Oh6HLuWhLqKjNrpt7YYPW9WjUZeAHYmGMWK88A+8eW3xot6e34bExpGFDcJVNXButRl+TdgW4PzmPx/aA11Krtqh0PB3iCYs170I3s1MbqaiNI/7y2essuCq+FS8NfgvfKNq0N7p2lWhu4lKIk31XFvguD25KnG/SMbFYJ+slnXC9UIu0jEKOZD2IHmwVH7osaXj/v4IPevc4dYZw+MXRl10bCo3zu8r6XVZTSKLUND3Al865Cr9vZkDgaCE1JEGnkeA6nxi1XexEauOTm3mnlee2/YSt5q5MzyPhC8rGEBZM1BnH9fhBzBo3m51sEbusJrRVsNlofqw1AAJFzU4/8BAAD//wMAUEsDBBQABgAIAAAAIQA7bTJLwQAAAEIBAAAjAAAAeGwvd29ya3NoZWV0cy9fcmVscy9zaGVldDEueG1sLnJlbHOEj8GKwjAURfcD/kN4e5PWhQxDUzciuFXnA2L62gbbl5D3FP17sxxlwOXlcM/lNpv7PKkbZg6RLNS6AoXkYxdosPB72i2/QbE46twUCS08kGHTLr6aA05OSonHkFgVC7GFUST9GMN+xNmxjgmpkD7m2UmJeTDJ+Ysb0Kyqam3yXwe0L0617yzkfVeDOj1SWf7sjn0fPG6jv85I8s+ESTmQYD6iSDnIRe3ygGJB63f2nmt9DgSmbczL8/YJAAD//wMAUEsDBBQABgAIAAAAIQBLRe85/QEAAKQGAAAnAAAAeGwvcHJpbnRlclNldHRpbmdzL3ByaW50ZXJTZXR0aW5nczEuYmlu7FTBbtNAEH1rpzSlSFjiBxBC4kQUaCiUm2PHklFim9iBHCxVVr1IFq5tObbUcgDxExz6Rb3AF/ATXLmE2bVL2oKigjiAxKx2ZnZ25u1od2dM5DhADQMcGSqUJO/jBW6T5SGNXexgHbGOeu0zTjduLd9vKtjCyfaguw+Gm5grCsm5ohLXMViL8mubrHUXUsxNYkuiyyim7czuQGOpGir9j9qndadcbzc7LabAvSvRmzP+YPr/of7SGzj7V1dJTyNnfxI8E74afRELc6oZ86fVZP9QT3ZW1NUwyWC504nvzqbGCNORb47HmGVJyRdC86KCl37yhkMfYMoXeVpXSZ7B9Ozdfh9GnublJI95owmeRhWH68Be+LwaHntlklVBcvCaVwjKmsOsi5QfwXGdESY8TqLguBDhFBbvwC0TnlWRPGOsO6Zv6N5o3zD2+le4kFABLG9uAV1+Xv9yowlevluBXKhf9dKtE05TgoPuyfb3GGlttlqbKqWBpwgxw4LaVkk8hI2X1G58kgHe4gFZdBQ0TETU3iJaj+UjRUhJDyjukHZDvMIRHuMJhrDQI09h/ReI0ee4SCo2yCCar7xJpiCm1V7vUePGREOWTa1R2uD4DKQjNY9CBH19Ts693xzyGJkGA9s6n+UpGMMHrB64yVVw7V4zV//iGwAAAP//AwBQSwMEFAAGAAgAAAAhAEREYZueAAAAuwAAABAAAAB4bC9jYWxjQ2hhaW4ueG1sPI7BCsIwEETvgv+w7N2mVRCRpj0IPXrSDwjpagLJpmSD6N8bRbwMzBuYmX58xgAPyuITa+yaFoHYptnzXeP1Mm0OCFIMzyYkJo0vEhyH9aq3JtiTM56hNrBodKUsR6XEOopGmrQQ1+SWcjSl2nxXsmQysziiEoPatu1exVqAQ28ha5x2CL5+QAgfVT987uqFL69E/WeHNwAAAP//AwBQSwMEFAAGAAgAAAAhAN+dr5BmAQAAmAIAABEACAFkb2NQcm9wcy9jb3JlLnhtbCCiBAEooAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHySXU+DMBiF7038D6T3rKVsbDaMJWp25ZIlzmi8a9p3WyMU0lbZ/r0FBuJHvIRzzpNz3jRdnYo8+ABjVamXKJoQFIAWpVT6sERPu3W4QIF1XEuelxqW6AwWrbLrq1RUTJQGtqaswDgFNvAkbZmolujoXMUwtuIIBbcT79Be3Jem4M5/mgOuuHjjB8CUkAQX4LjkjuMGGFYDEV2QUgzI6t3kLUAKDDkUoJ3F0STCX14HprB/Blpl5CyUO1d+06XumC1FJw7uk1WDsa7rSR23NXz/CL9sHh7bqaHSza0EoCyVggkD3JUmO5S5FM7kKR79bA6Yc+s2/tZ7BfL2nKmaW+U4jaMU/1b7wNYo7UBmlNAkJElIyY4kjM5ZNH8dcr3J12hXd11ABn4H61b3ynN8d79bo4YXhyQOabIjN4wQNm14P/LNrg5YXHr/T/QNFyGdNQ2nM0ajEbEHZG3p728p+wQAAP//AwBQSwMEFAAGAAgAAAAhAEu7pMTSAQAAqAMAABAACAFkb2NQcm9wcy9hcHAueG1sIKIEASigAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApFPBbtQwEL0j8Q/B966zparQynFVbUE9gFhpt70i40w2Fokd2dNolxN0L3BYiSNfAMceQYK/SSvxGTgxTVOKOMBtZt7k5c2bMTtYlUVUg3XK6ISMRzGJQEuTKr1MyMniyc4jEjkUOhWF0ZCQNThywO/fYzNrKrCowEWeQruE5IjVhFIncyiFG3lYeyQzthToU7ukJsuUhCMjz0rQSHfjeJ/CCkGnkO5UPSEJjJMa/5U0NbLV504X68oL5uywqgolBfop+TMlrXEmw+jxSkLB6BBkXt0c5JlVuOYxo8OUzaUoYOqJeSYKB4zeFNgxiNa0mVDWcVbjpAaJxkZOvfa27ZHopXDQyklILawSGr2sti0kXVxUDi1vNhfN5ntzftGcf2mDzTtGfWMAu3D4zTBWe3zcNfjgr42B6+rD9ur99vLbx+bt9vLrmx+fPv//j1qlYXKv4LYnC4UFuOfZTFj8g0W7Q4s6gcGgoHWeA2AY7pcRvSUBejCzSuOLQwvizhTdJrye3xRMTVkJvfZAHz1V+pU7qRbmSCBcb/l2kc1zYSH1h9FfQV9gx37BtmhJprnQS0ive+4C7U2ehofHx/uj+GHsz21QY/TmifGfAAAA//8DAFBLAQItABQABgAIAAAAIQB0NlqmegEAAIQFAAATAAAAAAAAAAAAAAAAAAAAAABbQ29udGVudF9UeXBlc10ueG1sUEsBAi0AFAAGAAgAAAAhALVVMCP0AAAATAIAAAsAAAAAAAAAAAAAAAAAswMAAF9yZWxzLy5yZWxzUEsBAi0AFAAGAAgAAAAhACJCXwmjAwAA1ggAAA8AAAAAAAAAAAAAAAAA2AYAAHhsL3dvcmtib29rLnhtbFBLAQItABQABgAIAAAAIQCSB5TsBAEAAD8DAAAaAAAAAAAAAAAAAAAAAKgKAAB4bC9fcmVscy93b3JrYm9vay54bWwucmVsc1BLAQItABQABgAIAAAAIQDRkhPvCgsAANMrAAAYAAAAAAAAAAAAAAAAAOwMAAB4bC93b3Jrc2hlZXRzL3NoZWV0MS54bWxQSwECLQAUAAYACAAAACEAqAMlGloHAADKIAAAEwAAAAAAAAAAAAAAAAAsGAAAeGwvdGhlbWUvdGhlbWUxLnhtbFBLAQItABQABgAIAAAAIQAdeRSU3gYAAIpAAAANAAAAAAAAAAAAAAAAALcfAAB4bC9zdHlsZXMueG1sUEsBAi0AFAAGAAgAAAAhAJn+mFf4AwAA5wsAABQAAAAAAAAAAAAAAAAAwCYAAHhsL3NoYXJlZFN0cmluZ3MueG1sUEsBAi0AFAAGAAgAAAAhADttMkvBAAAAQgEAACMAAAAAAAAAAAAAAAAA6ioAAHhsL3dvcmtzaGVldHMvX3JlbHMvc2hlZXQxLnhtbC5yZWxzUEsBAi0AFAAGAAgAAAAhAEtF7zn9AQAApAYAACcAAAAAAAAAAAAAAAAA7CsAAHhsL3ByaW50ZXJTZXR0aW5ncy9wcmludGVyU2V0dGluZ3MxLmJpblBLAQItABQABgAIAAAAIQBERGGbngAAALsAAAAQAAAAAAAAAAAAAAAAAC4uAAB4bC9jYWxjQ2hhaW4ueG1sUEsBAi0AFAAGAAgAAAAhAN+dr5BmAQAAmAIAABEAAAAAAAAAAAAAAAAA+i4AAGRvY1Byb3BzL2NvcmUueG1sUEsBAi0AFAAGAAgAAAAhAEu7pMTSAQAAqAMAABAAAAAAAAAAAAAAAAAAlzEAAGRvY1Byb3BzL2FwcC54bWxQSwUGAAAAAA0ADQBkAwAAnzQAAAAA';
+ function b64ToUint8Delivery(b64){const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+ function downloadDeliveryBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);}
+ function dateTextDelivery(v){if(!v)return '';const a=v.split('-');return a.length===3?`${a[0]}/${Number(a[1])}/${Number(a[2])}`:v;}
+ async function exportDeliveryExcel(){
+   if(typeof saveDelivery==='function') saveDelivery();
+   if(typeof ExcelJS==='undefined'){alert('Excel出力機能を読み込めませんでした。インターネット接続をご確認ください。');return;}
+   const btn=document.getElementById('deliveryExcel');
+   const old=btn.textContent; btn.disabled=true; btn.textContent='Excel作成中…';
+   try{
+     const wb=new ExcelJS.Workbook();
+     await wb.xlsx.load(b64ToUint8Delivery(DELIVERY_TEMPLATE_B64));
+     const ws=wb.worksheets[0];
+     const to=document.getElementById('deliveryTo')?.value||'飛鳥運輸';
+     const date=document.getElementById('deliveryDate')?.value||'';
+     const subject=document.getElementById('deliverySubject')?.value||'';
+     const name=document.getElementById('deliveryName')?.value||'長友　鉄也';
+
+     ws.getCell('C3').value=to;
+     ws.getCell('F3').value=date?new Date(date+'T00:00:00'): '';
+     if(date) ws.getCell('F3').numFmt='yyyy/m/d';
+     ws.getCell('C5').value=subject;
+     ws.getCell('I8').value=name;
+     ws.getCell('B10').value=dateTextDelivery(date);
+     ws.getCell('G11').value=to+'様確認';
+
+     const rows=[...document.querySelectorAll('#deliveryRows tr[data-id]')].map(tr=>({
+       machine:tr.cells[0]?.innerText.trim()||'',
+       maker:tr.querySelector('.d-maker')?.value||'',
+       body:tr.querySelector('.d-body')?.value||'',
+       board:tr.querySelector('.d-board')?.value||'',
+       status:tr.querySelector('.d-status')?.value||'',
+       deliveryDate:tr.querySelector('.d-date')?.value||''
+     }));
+
+     for(let r=13;r<=27;r++){
+       ws.getCell('B'+r).value='';
+       ws.getCell('C'+r).value='';
+       ws.getCell('E'+r).value='';
+       ws.getCell('F'+r).value='';
+       ws.getCell('G'+r).value='入庫済 ・ 未入庫 ・ 取扱無し';
+       ws.getCell('J'+r).value='';
+     }
+     rows.slice(0,15).forEach((x,i)=>{
+       const r=13+i;
+       ws.getCell('B'+r).value=x.machine;
+       ws.getCell('C'+r).value=x.maker;
+       ws.getCell('E'+r).value=x.body;
+       ws.getCell('F'+r).value=x.board;
+       ws.getCell('G'+r).value=x.status||'未入庫';
+       if(x.deliveryDate){
+         ws.getCell('J'+r).value=new Date(x.deliveryDate+'T00:00:00');
+         ws.getCell('J'+r).numFmt='yyyy/m/d';
+       }
+     });
+
+     const buf=await wb.xlsx.writeBuffer();
+     const stamp=(date||new Date().toISOString().slice(0,10)).replaceAll('-','');
+     downloadDeliveryBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`新台納品確認書_${stamp}.xlsx`);
+   }catch(err){console.error(err);alert('新台納品確認書のExcel出力に失敗しました。');}
+   finally{btn.disabled=false;btn.textContent=old;}
+ }
+ const btn=document.getElementById('deliveryExcel');
+ if(btn) btn.addEventListener('click',exportDeliveryExcel);
+})();
+</script>
+
+</body>
+</html>`;
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  }, true);
+})();
+</script>
+<script id="pop-order-handlers">
+(function(){
+ const POP_TEMPLATE_B64='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';
+ const tab=document.getElementById('tabPop');if(tab)tab.onclick=showPop;
+ const add=document.getElementById('popAdd');if(add)add.onclick=()=>{addPopRow();savePop()};
+ const reset=document.getElementById('popReset');if(reset)reset.onclick=()=>{if(confirm('POP発注書の入力内容をクリアしますか？')){localStorage.removeItem(POP_KEY);loadPop()}};
+ document.querySelectorAll('#popPanel input,#popPanel select').forEach(x=>x.addEventListener('change',savePop));
+ function dateText(v){if(!v)return '';const a=v.split('-');return a.length===3?`${a[0]}年${Number(a[1])}月${Number(a[2])}日`:v;}
+ function b64ToUint8(b64){const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+ function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);}
+ async function exportPopExcel(){
+   savePop();
+   if(typeof ExcelJS==='undefined'){alert('Excel出力機能を読み込めませんでした。インターネット接続をご確認ください。');return;}
+   const btn=document.getElementById('popPrint');const old=btn.textContent;btn.disabled=true;btn.textContent='Excel作成中…';
+   try{
+     const wb=new ExcelJS.Workbook();
+     await wb.xlsx.load(b64ToUint8(POP_TEMPLATE_B64));
+     const ws=wb.worksheets[0];
+     const reqDate=document.getElementById('popRequestDate')?.value||'';
+     const requester=document.getElementById('popRequester')?.value||'長友　鉄也';
+     const applicant=document.getElementById('popApplicant')?.value||'長友　鉄也';
+     const openDate=document.getElementById('popOpenDate')?.value||'';
+     const store=document.getElementById('popStore')?.value||'ゴールド';
+     ws.getCell('D2').value=dateText(reqDate);
+     ws.getCell('H2').value=requester;
+     ws.getCell('N2').value=dateText(openDate);
+     ws.getCell('B3').value=`　　　店舗名　　　${store}　　　　　　　　／依頼者　${applicant}`;
+     const rows=[...document.querySelectorAll('#popRows tr')].map(tr=>({
+       machine:tr.querySelector('.pmachine')?.value||'',place:tr.querySelector('.pplace')?.value||'',qty:tr.querySelector('.pqty')?.value||'',units:tr.querySelector('.punits')?.value||''
+     })).filter(x=>x.machine||x.place||x.qty||x.units);
+     for(let r=7;r<=24;r++){['B','F','G','H','I','M','N','O'].forEach(c=>ws.getCell(c+r).value='');}
+     rows.slice(0,36).forEach((x,i)=>{
+       const right=i>=18, r=7+(i%18);
+       if(!right){ws.getCell('B'+r).value=x.machine;ws.getCell('F'+r).value=x.place;ws.getCell('G'+r).value=x.qty===''?'':Number(x.qty);ws.getCell('H'+r).value=x.units===''?'':Number(x.units);}
+       else{ws.getCell('I'+r).value=x.machine;ws.getCell('M'+r).value=x.place;ws.getCell('N'+r).value=x.qty===''?'':Number(x.qty);ws.getCell('O'+r).value=x.units===''?'':Number(x.units);}
+     });
+     const val=id=>document.getElementById(id)?.value||'';
+     ws.getCell('L29').value=val('popShimatai')===''?'':Number(val('popShimatai'));
+     ws.getCell('N29').value=document.getElementById('popShimataiRev')?.checked?'○':'';
+     ws.getCell('L32').value=val('popBigmo')===''?'':Number(val('popBigmo'));
+     ws.getCell('N32').value=document.getElementById('popBigmoRev')?.checked?'○':'';
+     ws.getCell('B35').value=`A1縦×${val('posterA1')||0}枚`;
+     ws.getCell('B36').value=`B2縦×${val('posterB2v')||0}枚`;
+     ws.getCell('B37').value=`B0横×${val('posterB0h')||0}枚`;
+     ws.getCell('E35').value=`B2横×${val('infoB2h')||0}枚`;
+     ws.getCell('E36').value=`B0横×${val('infoB0h')||0}枚`;
+     ws.getCell('H35').value=`A1縦×${val('planA1')||0}枚`;
+     ws.getCell('H36').value=`B0横×${val('planB0h')||0}枚`;
+     const buf=await wb.xlsx.writeBuffer();
+     const stamp=(openDate||reqDate||new Date().toISOString().slice(0,10)).replaceAll('-','');
+     downloadBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`新台POP発注書_${stamp}.xlsx`);
+   }catch(err){console.error(err);alert('Excel出力に失敗しました。');}
+   finally{btn.disabled=false;btn.textContent=old;}
+ }
+ const pr=document.getElementById('popPrint');if(pr)pr.onclick=exportPopExcel;
+})();
+</script>
+</body></html>
