@@ -304,8 +304,40 @@ tbody tr:hover td{background:#14223a!important}
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+
+<!-- Firebase shared-data libraries -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<style id="firebase-share-style">
+#firebaseAuthGate{position:fixed;inset:0;z-index:99999;background:rgba(5,10,20,.92);display:flex;align-items:center;justify-content:center;padding:20px}
+#firebaseAuthGate.hidden{display:none!important}
+.firebase-auth-card{width:min(460px,100%);background:linear-gradient(180deg,#18243a,#111a2b);border:1px solid #334563;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.45);color:#eef4ff}
+.firebase-auth-card h2{margin:0 0 8px;font-size:24px}.firebase-auth-card p{color:#9fb0c9;line-height:1.6;font-size:13px;margin:0 0 16px}.firebase-auth-card label{margin-top:12px}.firebase-auth-card input{margin-top:6px}
+.firebase-auth-actions{display:flex;gap:10px;margin-top:18px}.firebase-auth-actions button{flex:1;background:linear-gradient(135deg,#2f6df6,#1d4ed8)!important;border:1px solid #4e7cf5!important;color:#fff!important}
+#firebaseAuthError{min-height:20px;margin-top:12px;color:#ff8d8d;font-weight:700;font-size:13px}
+#firebaseShareBar{position:fixed;right:14px;bottom:14px;z-index:9998;display:flex;align-items:center;gap:8px;background:rgba(10,18,32,.94);border:1px solid #334563;border-radius:999px;padding:7px 9px 7px 13px;box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:12px;color:#dce8fa}
+#firebaseShareBadge{font-weight:800;white-space:nowrap}#firebaseLogoutBtn{height:30px;padding:0 10px;border-radius:999px;background:#17253d!important;color:#cbd7ea!important;border:1px solid #3a4d6d!important;font-size:11px}
+#firebaseSaveToast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:10000;background:#0f7d50;color:#fff;border:1px solid #2abb80;border-radius:999px;padding:8px 16px;font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:.2s}
+#firebaseSaveToast.show{opacity:1}
+@media(max-width:700px){#firebaseShareBar{left:8px;right:8px;bottom:8px;justify-content:center}#firebaseSaveToast{bottom:58px}}
+</style>
+
 </head>
-<body><div class="wrap">
+<body>
+<div id="firebaseAuthGate">
+  <div class="firebase-auth-card">
+    <h2>店舗端末の認証</h2>
+    <p>このアプリの入力内容はFirebaseで共有します。以前登録した店舗端末のIDと認証キーを入力してください。初回認証後は、このブラウザにログイン状態を保持します。</p>
+    <label>端末ID<input id="firebaseLoginId" type="text" placeholder="例：GOLD01" autocomplete="username"></label>
+    <label>認証キー<input id="firebaseLoginPassword" type="password" placeholder="Firebaseで設定した認証キー" autocomplete="current-password"></label>
+    <div class="firebase-auth-actions"><button id="firebaseLoginBtn" type="button">この端末を認証</button></div>
+    <div id="firebaseAuthError"></div>
+  </div>
+</div>
+<div id="firebaseShareBar"><span id="firebaseShareBadge">Firebase：接続確認中…</span><button id="firebaseLogoutBtn" type="button" style="display:none">認証解除</button></div>
+<div id="firebaseSaveToast">共有データを保存しました</div>
+<div class="wrap">
 <header><div><h1>新台関連業務アプリ</h1><div class="sub">配置図Excelと検定・認定期限Excelを読み込み、台番号ごとに機種名・検定番号・有効期限を照合して表示します。</div></div><div class="badge" id="badge">データ未読込</div></header>
 
 <div class="card"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px" class="uploadgrid">
@@ -875,4 +907,247 @@ window.onload=function(){
  const pr=document.getElementById('popPrint');if(pr)pr.onclick=exportPopExcel;
 })();
 </script>
+
+<script id="firebase-shared-state">
+(function(){
+  // 既存の店舗端末認証プロジェクトを利用し、GitHub Pagesのまま共有保存する。
+  const firebaseConfig = {
+    apiKey: "AIzaSyA241WcXSucsjoixxyXVSygGeiHvF8J1d0",
+    authDomain: "gold-cee80.firebaseapp.com",
+    projectId: "gold-cee80",
+    storageBucket: "gold-cee80.firebasestorage.app",
+    messagingSenderId: "4380559169",
+    appId: "1:4380559169:web:3e8192da6dd8c0dd7983c0",
+    measurementId: "G-ZXWGV19DG9"
+  };
+
+  const CLOUD_DOC_BY_LOCAL_KEY = {
+    machine_cert_applications_v1: 'shindai_cert_applications_v1',
+    machineCheckTableV1: 'shindai_machine_check_v1',
+    newMachineDeliveryV2: 'shindai_new_machine_delivery_v2',
+    popOrderFormV1: 'shindai_pop_order_form_v1'
+  };
+  const TRACKED_KEYS = new Set(Object.keys(CLOUD_DOC_BY_LOCAL_KEY));
+  const LOCAL_KEY_BY_CLOUD_DOC = Object.fromEntries(Object.entries(CLOUD_DOC_BY_LOCAL_KEY).map(([k,v])=>[v,k]));
+
+  let db=null;
+  let cloudReady=false;
+  let cloudApplying=false;
+  let writeTimers={};
+  let unsubscribers=[];
+  let toastTimer=null;
+
+  const originalSetItem = Storage.prototype.setItem;
+  const originalRemoveItem = Storage.prototype.removeItem;
+
+  function byId(id){ return document.getElementById(id); }
+  function setShareStatus(text,mode=''){
+    const el=byId('firebaseShareBadge'); if(!el)return;
+    el.textContent=text;
+    el.style.color=mode==='ok'?'#62e6ad':mode==='ng'?'#ff8d8d':'#dce8fa';
+  }
+  function showToast(text='共有データを保存しました'){
+    const el=byId('firebaseSaveToast'); if(!el)return;
+    el.textContent=text; el.classList.add('show');
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),1100);
+  }
+  function normalizeLoginId(raw){
+    const v=String(raw||'').trim();
+    if(!v)return '';
+    if(v.includes('@'))return v.toLowerCase();
+    const normalized=v.toLowerCase().replace(/[^a-z0-9._-]/g,'');
+    return normalized ? normalized+'@store-device.local' : '';
+  }
+  function displayLoginId(email){
+    const e=String(email||'');
+    return e.endsWith('@store-device.local') ? e.slice(0,-'@store-device.local'.length).toUpperCase() : e;
+  }
+  function friendlyAuthError(err){
+    const c=err?.code||'';
+    if(c.includes('invalid-credential')||c.includes('wrong-password')||c.includes('user-not-found')||c.includes('invalid-email'))return '端末IDまたは認証キーが違います。';
+    if(c.includes('too-many-requests'))return 'ログイン試行が多すぎます。しばらく待ってから再度お試しください。';
+    if(c.includes('network-request-failed'))return 'インターネット接続を確認してください。';
+    if(c.includes('operation-not-allowed'))return 'Firebase側でメール/パスワード認証が無効です。';
+    return '端末認証に失敗しました。'+(err?.message?' '+err.message:'');
+  }
+  function showGate(message=''){
+    byId('firebaseAuthGate')?.classList.remove('hidden');
+    if(byId('firebaseAuthError'))byId('firebaseAuthError').textContent=message;
+    if(byId('firebaseLogoutBtn'))byId('firebaseLogoutBtn').style.display='none';
+    setShareStatus('Firebase：未認証','ng');
+  }
+  function hideGate(user){
+    byId('firebaseAuthGate')?.classList.add('hidden');
+    if(byId('firebaseAuthError'))byId('firebaseAuthError').textContent='';
+    if(byId('firebaseLogoutBtn'))byId('firebaseLogoutBtn').style.display='inline-block';
+    setShareStatus('Firebase：'+displayLoginId(user?.email||'認証済み')+'・共有中','ok');
+  }
+  function parseStoredJson(key){
+    try{return JSON.parse(localStorage.getItem(key)||'{}')}catch(e){return {}}
+  }
+  function applyLocalValue(key,value){
+    cloudApplying=true;
+    try{
+      if(value===undefined || value===null){
+        originalRemoveItem.call(localStorage,key);
+      }else{
+        originalSetItem.call(localStorage,key,JSON.stringify(value));
+      }
+    }finally{cloudApplying=false;}
+    refreshUiForKey(key);
+  }
+  function refreshUiForKey(key){
+    try{
+      if(key==='machine_cert_applications_v1' && typeof renderCertSummary==='function') renderCertSummary();
+      if(key==='machineCheckTableV1' && typeof renderNewMachineCheck==='function') renderNewMachineCheck();
+      if(key==='newMachineDeliveryV2' && typeof renderDelivery==='function') renderDelivery();
+      if(key==='popOrderFormV1' && typeof loadPop==='function') loadPop();
+    }catch(err){console.error('共有データの画面反映エラー',key,err);}
+  }
+  async function pushKey(key){
+    if(!cloudReady || cloudApplying || !TRACKED_KEYS.has(key) || !db)return;
+    const docId=CLOUD_DOC_BY_LOCAL_KEY[key];
+    try{
+      await db.collection('appState').doc(docId).set({
+        value:parseStoredJson(key),
+        app:'新台関連業務アプリ',
+        updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      setShareStatus('Firebase：共有中・保存済み','ok');
+      showToast();
+    }catch(err){
+      console.error('Firebase save error',key,err);
+      setShareStatus('Firebase：保存エラー','ng');
+    }
+  }
+  function schedulePush(key){
+    if(!cloudReady || cloudApplying || !TRACKED_KEYS.has(key))return;
+    clearTimeout(writeTimers[key]);
+    writeTimers[key]=setTimeout(()=>pushKey(key),220);
+  }
+  async function deleteCloudKey(key){
+    if(!cloudReady || cloudApplying || !TRACKED_KEYS.has(key) || !db)return;
+    try{
+      await db.collection('appState').doc(CLOUD_DOC_BY_LOCAL_KEY[key]).delete();
+      setShareStatus('Firebase：共有中・削除反映済み','ok');
+      showToast('共有データをクリアしました');
+    }catch(err){
+      console.error('Firebase delete error',key,err);
+      setShareStatus('Firebase：削除エラー','ng');
+    }
+  }
+
+  Storage.prototype.setItem=function(key,value){
+    originalSetItem.call(this,key,value);
+    if(this===localStorage && TRACKED_KEYS.has(key)) schedulePush(key);
+  };
+  Storage.prototype.removeItem=function(key){
+    originalRemoveItem.call(this,key);
+    if(this===localStorage && TRACKED_KEYS.has(key)) deleteCloudKey(key);
+  };
+
+  async function loadAndWatchSharedData(user){
+    try{
+      db=firebase.firestore();
+      setShareStatus('Firebase：共有データ読込中…');
+      const refs=Object.entries(CLOUD_DOC_BY_LOCAL_KEY);
+
+      // 既存共有データを優先。共有データがまだ無い場合だけ、この端末の既存localStorageを初期データとして保存。
+      for(const [localKey,docId] of refs){
+        const ref=db.collection('appState').doc(docId);
+        const snap=await ref.get();
+        if(snap.exists && Object.prototype.hasOwnProperty.call(snap.data()||{},'value')){
+          applyLocalValue(localKey,snap.data().value);
+        }else{
+          await ref.set({
+            value:parseStoredJson(localKey),
+            app:'新台関連業務アプリ',
+            updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+      }
+
+      cloudReady=true;
+      hideGate(user);
+
+      unsubscribers.forEach(fn=>{try{fn()}catch(e){}}); unsubscribers=[];
+      for(const [localKey,docId] of refs){
+        const unsub=db.collection('appState').doc(docId).onSnapshot(snap=>{
+          if(!cloudReady || cloudApplying)return;
+          if(!snap.exists){
+            applyLocalValue(localKey,null);
+            return;
+          }
+          const data=snap.data()||{};
+          if(Object.prototype.hasOwnProperty.call(data,'value')) applyLocalValue(localKey,data.value);
+        },err=>{
+          console.error('Firebase realtime error',localKey,err);
+          setShareStatus('Firebase：同期エラー','ng');
+        });
+        unsubscribers.push(unsub);
+      }
+    }catch(err){
+      console.error('Firebase shared connection error',err);
+      cloudReady=false;
+      if(err?.code==='permission-denied'){
+        try{await firebase.auth().signOut()}catch(e){}
+        showGate('この端末はFirebaseで利用許可されていません。以前登録した店舗端末IDをご確認ください。');
+      }else{
+        showGate('共有データベースへ接続できません。インターネット接続を確認してください。');
+      }
+    }
+  }
+
+  async function login(){
+    const email=normalizeLoginId(byId('firebaseLoginId')?.value||'');
+    const password=byId('firebaseLoginPassword')?.value||'';
+    if(!email||!password){showGate('端末IDと認証キーを入力してください。');return;}
+    const btn=byId('firebaseLoginBtn');
+    try{
+      if(btn){btn.disabled=true;btn.textContent='認証中…';}
+      if(byId('firebaseAuthError'))byId('firebaseAuthError').textContent='';
+      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      await firebase.auth().signInWithEmailAndPassword(email,password);
+    }catch(err){
+      console.error('Firebase login error',err);
+      showGate(friendlyAuthError(err));
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='この端末を認証';}
+    }
+  }
+  async function logout(){
+    if(!confirm('この端末のFirebase認証を解除しますか？'))return;
+    cloudReady=false;
+    unsubscribers.forEach(fn=>{try{fn()}catch(e){}}); unsubscribers=[];
+    try{await firebase.auth().signOut()}catch(e){}
+    showGate('端末認証を解除しました。');
+  }
+
+  function start(){
+    try{
+      if(typeof firebase==='undefined'){
+        showGate('Firebaseライブラリを読み込めません。インターネット接続を確認してください。');
+        return;
+      }
+      if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      byId('firebaseLoginBtn')?.addEventListener('click',login);
+      byId('firebaseLoginPassword')?.addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+      byId('firebaseLogoutBtn')?.addEventListener('click',logout);
+      firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+      firebase.auth().onAuthStateChanged(user=>{
+        cloudReady=false;
+        unsubscribers.forEach(fn=>{try{fn()}catch(e){}}); unsubscribers=[];
+        if(!user){showGate();return;}
+        loadAndWatchSharedData(user);
+      });
+    }catch(err){
+      console.error('Firebase init error',err);
+      showGate('Firebaseの初期化に失敗しました。');
+    }
+  }
+
+  start();
+})();
+</script>
+
 </body></html>
