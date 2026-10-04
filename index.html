@@ -340,13 +340,13 @@ tbody tr:hover td{background:#14223a!important}
 <div id="firebaseShareBar"><span id="firebaseShareBadge">Firebase：接続確認中…</span><button id="firebaseSaveNowBtn" type="button">今すぐ保存</button><button id="firebaseLogoutBtn" type="button" style="display:none">認証解除</button></div>
 <div id="firebaseSaveToast">共有データを保存しました</div>
 <div class="wrap">
-<header><div><div class="app-version">Ver 2026.10.04.2 <small>期限区分再判定修正版｜判定基準：起動日</small></div><h1>新台関連業務アプリ</h1><div class="sub">配置図Excelと検定・認定期限Excelを読み込み、台番号ごとに機種名・検定番号・有効期限を照合して表示します。期限に応じて「検定機 → 認定機 → みなし機」を自動判定します。</div></div><div class="badge" id="badge">データ未読込</div></header>
+<header><div><div class="app-version">Ver 2026.10.04.3 <small>認定期限表示修正版｜判定基準：起動日</small></div><h1>新台関連業務アプリ</h1><div class="sub">配置図Excelと検定・認定期限Excelを読み込み、台番号ごとに機種名・検定番号・有効期限を照合して表示します。期限に応じて「検定機 → 認定機 → みなし機」を自動判定します。</div></div><div class="badge" id="badge">データ未読込</div></header>
 
 <div class="card"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px" class="uploadgrid">
 <div class="upload" id="drop"><h2>① 配置図Excel</h2><p>台番号・記号・メーカー・機種名が入った配置図を選択します。</p><label class="filebtn" for="file">配置図Excelを選択</label><input id="file" type="file" accept=".xlsx,.xls,.xlsm,.csv"><div class="status" id="status">未読込</div></div>
 <div class="upload" id="certDrop"><h2>② 検定・認定期限Excel</h2><p>C列＝検定機・認定機、D列＝メーカー、E列＝型式名、G列＝検定期限、H列＝認定期限、I列＝検定番号</p><label class="filebtn" for="certFile">期限Excelを選択</label><input id="certFile" type="file" accept=".xlsx,.xls,.xlsm,.csv"><div class="status" id="certStatus">未読込</div></div>
 <div class="upload" id="newDrop"><h2>③ 新台チェック表Excel</h2><p>【新台】欄を探し、D列の型式名をチェック表へ抽出します。</p><label class="filebtn" for="newMachineFile">新台データを選択</label><input id="newMachineFile" type="file" accept=".xlsx,.xls,.xlsm,.csv"><div class="status" id="newStatus">未読込</div></div>
-</div><div class="note" style="margin-top:14px">Firebase接続後は、読み込んだ配置図・期限資料・新台データと各入力内容を共有保存します。ページを閉じても次回自動復元します。<br>区分の自動判定：現在日がG列（検定期限）以内なら「検定機」、G列を過ぎたら「認定機」、H列（認定期限）を過ぎたら「みなし機」に自動変更します。C列が「認定機」の場合も認定機として扱い、認定機はH列の期限を優先表示します。</div></div>
+</div><div class="note" style="margin-top:14px">Firebase接続後は、読み込んだ配置図・期限資料・新台データと各入力内容を共有保存します。ページを閉じても次回自動復元します。<br>区分の自動判定：現在日がG列（検定期限）以内なら「検定機」、G列を過ぎたら「認定機」、H列（認定期限）を過ぎたら「みなし機」に自動変更します。C列が「認定機」の場合も認定機として扱い、認定機の「検定・認定期限」にはH列の認定期限だけを表示します。認定期限が切れていない認定機には「期限切れ」を表示しません。</div></div>
 
 <div class="card"><div class="tabs"><button class="tab active" id="tabNumbers">台番号・機種一覧</button><button class="tab" id="tabMachines">機種マスタ</button><button class="tab" id="tabCert">検定・認定</button><button class="tab" id="tabCheck">チェック表</button><button class="tab" id="tabPop">POP発注書</button><button class="tab" id="tabDelivery">新台納品確認書</button></div></div>
 
@@ -526,22 +526,24 @@ function certStateFromRecord(c,now){
   if(source.includes('みなし')){
     certType='みなし機';isDeemed=true;deadline=h||g;deadlineSource=h?'H列（認定期限／期限超過）':(g?'G列（期限）':'');
   }else if(source.includes('認定機')){
+    // 認定機は必ずH列（認定期限）を表示対象にする。G列へはフォールバックしない。
     if(h&&now>h){
       certType='みなし機';isDeemed=true;deadline=h;deadlineSource='H列（認定期限／期限超過）';
     }else{
-      certType='認定機';isCertified=true;deadline=h||g;deadlineSource=h?'H列（認定期限）':(g?'G列（認定期限未登録）':'');
+      certType='認定機';isCertified=true;deadline=h;deadlineSource=h?'H列（認定期限）':'H列（認定期限未登録）';
     }
   }else if(source.includes('検定機')){
     if(g&&now>g){
-      certType='認定機';isCertified=true;deadline=h||g;deadlineSource=h?'H列（認定期限／検定期限超過で認定機へ）':'G列（検定期限超過→認定機／認定期限未登録）';
+      // 検定期限超過で認定機へ移行後は、表示期限をH列へ切り替える。
+      certType='認定機';isCertified=true;deadline=h;deadlineSource=h?'H列（認定期限／検定期限超過で認定機へ）':'H列（認定期限未登録）';
     }else{
-      certType='検定機';deadline=g||h;deadlineSource=g?'G列（検定期限）':(h?'H列（認定期限）':'');
+      certType='検定機';deadline=g;deadlineSource=g?'G列（検定期限）':'G列（検定期限未登録）';
     }
   }else{
     // 区分が空欄等の場合の安全な補完。H列期限超過ならみなし、G列期限超過なら認定。
     if(h&&now>h){certType='みなし機';isDeemed=true;deadline=h;deadlineSource='H列（認定期限／期限超過）';}
-    else if(g&&now>g){certType='認定機';isCertified=true;deadline=h||g;deadlineSource=h?'H列（認定期限）':'G列（検定期限超過→認定機）';}
-    else{certType=source||'検定機';deadline=g||h;deadlineSource=g?'G列（検定期限）':(h?'H列（認定期限）':'');}
+    else if(g&&now>g){certType='認定機';isCertified=true;deadline=h;deadlineSource=h?'H列（認定期限）':'H列（認定期限未登録）';}
+    else{certType=source||'検定機';deadline=g;deadlineSource=g?'G列（検定期限）':'G列（検定期限未登録）';}
   }
   return {certType,isCertified,isDeemed,deadline,deadlineSource};
 }
@@ -648,9 +650,18 @@ function renderCertSummary(){
   if(!numbers.length){$('certSummaryRows').innerHTML='<tr><td colspan="7" class="empty">Excelファイルを添付してください</td></tr>';return}
   $('certSummaryRows').innerHTML=a.length?a.map(x=>{
     const dd=daysToDeadline(x.deadline);let judge='—',cls='';
-    if(String(x.certType||'').includes('みなし機')){judge='認定期限切れ';cls='sb-exp';}
-    else if(dd!==null&&dd<0){judge='期限切れ';cls='sb-exp';}
-    else if(dd!==null&&dd<=92){judge='3か月以内';cls='sb-soon';}
+    const ct=String(x.certType||'');
+    if(ct.includes('みなし機')){judge='認定期限切れ';cls='sb-exp';}
+    else if(ct.includes('認定機')){
+      // 認定機はH列の認定期限でのみ判定。期限内なら「期限切れ」は出さない。
+      if(!x.deadline){judge='認定期限未登録';}
+      else if(dd!==null&&dd<0){judge='認定期限切れ';cls='sb-exp';}
+      else if(dd!==null&&dd<=92){judge='3か月以内';cls='sb-soon';}
+    }else if(ct.includes('検定機')){
+      if(!x.deadline){judge='検定期限未登録';}
+      else if(dd!==null&&dd<0){judge='検定期限切れ';cls='sb-exp';}
+      else if(dd!==null&&dd<=92){judge='3か月以内';cls='sb-soon';}
+    }
     const type=certTypeBadge(x);
     const applied=isApplied(x);
     const apply=applied?`<button class="applybtn done" onclick="cancelApplied('${esc(applicationId(x))}')" title="クリックで申請済を取り消します">申請済<br><small>取消</small></button>`:((!x.isDeemed&&dd!==null&&dd>=0&&dd<=92)?`<button class="applybtn" onclick="markApplied('${esc(applicationId(x))}')">申請中</button>`:'—');
