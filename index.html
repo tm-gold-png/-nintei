@@ -340,7 +340,7 @@ tbody tr:hover td{background:#14223a!important}
 <div id="firebaseShareBar"><span id="firebaseShareBadge">Firebase：接続確認中…</span><button id="firebaseSaveNowBtn" type="button">今すぐ保存</button><button id="firebaseLogoutBtn" type="button" style="display:none">認証解除</button></div>
 <div id="firebaseSaveToast">共有データを保存しました</div>
 <div class="wrap">
-<header><div><div class="app-version">Ver 2026.10.04.3 <small>認定期限表示修正版｜判定基準：起動日</small></div><h1>新台関連業務アプリ</h1><div class="sub">配置図Excelと検定・認定期限Excelを読み込み、台番号ごとに機種名・検定番号・有効期限を照合して表示します。期限に応じて「検定機 → 認定機 → みなし機」を自動判定します。</div></div><div class="badge" id="badge">データ未読込</div></header>
+<header><div><div class="app-version">Ver 2026.10.04.4 <small>認定機の申請中ボタン非表示｜判定基準：起動日</small></div><h1>新台関連業務アプリ</h1><div class="sub">配置図Excelと検定・認定期限Excelを読み込み、台番号ごとに機種名・検定番号・有効期限を照合して表示します。期限に応じて「検定機 → 認定機 → みなし機」を自動判定します。</div></div><div class="badge" id="badge">データ未読込</div></header>
 
 <div class="card"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px" class="uploadgrid">
 <div class="upload" id="drop"><h2>① 配置図Excel</h2><p>台番号・記号・メーカー・機種名が入った配置図を選択します。</p><label class="filebtn" for="file">配置図Excelを選択</label><input id="file" type="file" accept=".xlsx,.xls,.xlsm,.csv"><div class="status" id="status">未読込</div></div>
@@ -664,7 +664,8 @@ function renderCertSummary(){
     }
     const type=certTypeBadge(x);
     const applied=isApplied(x);
-    const apply=applied?`<button class="applybtn done" onclick="cancelApplied('${esc(applicationId(x))}')" title="クリックで申請済を取り消します">申請済<br><small>取消</small></button>`:((!x.isDeemed&&dd!==null&&dd>=0&&dd<=92)?`<button class="applybtn" onclick="markApplied('${esc(applicationId(x))}')">申請中</button>`:'—');
+    const isInspection=String(x.certType||'').includes('検定機');
+    const apply=applied?`<button class="applybtn done" onclick="cancelApplied('${esc(applicationId(x))}')" title="クリックで申請済を取り消します">申請済<br><small>取消</small></button>`:((isInspection&&!x.isDeemed&&dd!==null&&dd>=0&&dd<=92)?`<button class="applybtn" onclick="markApplied('${esc(applicationId(x))}')">申請中</button>`:'—');
     return `<tr><td>${type}</td><td><div>${esc(x.maker)}</div><div class="machine">${esc(x.machine)}</div></td><td class="count">${x.count}</td><td>${esc(x.certificationNo||'-')}</td><td title="${esc(x.deadlineSource||'')}">${esc(x.deadline||'-')}</td><td>${cls?`<span class="statusbadge ${cls}">${judge}</span>`:judge}</td><td>${apply}</td></tr>`;
   }).join(''):'<tr><td colspan="7" class="empty">該当する機種はありません</td></tr>';
 }
