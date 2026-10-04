@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>新台関連業務アプリ Ver 2026.10.04.1</title>
+<title>新台関連業務アプリ Ver 2026.10.04.2</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f3f6fb;--card:#fff;--text:#162033;--muted:#667085;--line:#d8e0eb;--blue:#2457d6;--blue2:#1846ba;--green:#087443;--greenbg:#eafaf1;--orange:#b54708;--orangebg:#fff6ed;--red:#b42318}
@@ -340,7 +340,7 @@ tbody tr:hover td{background:#14223a!important}
 <div id="firebaseShareBar"><span id="firebaseShareBadge">Firebase：接続確認中…</span><button id="firebaseSaveNowBtn" type="button">今すぐ保存</button><button id="firebaseLogoutBtn" type="button" style="display:none">認証解除</button></div>
 <div id="firebaseSaveToast">共有データを保存しました</div>
 <div class="wrap">
-<header><div><div class="app-version">Ver 2026.10.04.1 <small>期限区分自動更新対応</small></div><h1>新台関連業務アプリ</h1><div class="sub">配置図Excelと検定・認定期限Excelを読み込み、台番号ごとに機種名・検定番号・有効期限を照合して表示します。期限に応じて「検定機 → 認定機 → みなし機」を自動判定します。</div></div><div class="badge" id="badge">データ未読込</div></header>
+<header><div><div class="app-version">Ver 2026.10.04.2 <small>期限区分再判定修正版｜判定基準：起動日</small></div><h1>新台関連業務アプリ</h1><div class="sub">配置図Excelと検定・認定期限Excelを読み込み、台番号ごとに機種名・検定番号・有効期限を照合して表示します。期限に応じて「検定機 → 認定機 → みなし機」を自動判定します。</div></div><div class="badge" id="badge">データ未読込</div></header>
 
 <div class="card"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px" class="uploadgrid">
 <div class="upload" id="drop"><h2>① 配置図Excel</h2><p>台番号・記号・メーカー・機種名が入った配置図を選択します。</p><label class="filebtn" for="file">配置図Excelを選択</label><input id="file" type="file" accept=".xlsx,.xls,.xlsm,.csv"><div class="status" id="status">未読込</div></div>
@@ -519,14 +519,57 @@ function certStateFromRecord(c,now){
   const g=c?.g instanceof Date&&!isNaN(c.g)?c.g:null;
   const h=c?.h instanceof Date&&!isNaN(c.h)?c.h:null;
   let certType='検定機',isCertified=false,isDeemed=false,deadline=null,deadlineSource='';
-  if((h&&now>h)||source.includes('みなし')){
-    certType='みなし機';isDeemed=true;deadline=h||g;deadlineSource=h?'H列（認定期限／期限超過）':'G列（検定期限／期限超過）';
-  }else if(source.includes('認定機')||(g&&now>g)){
-    certType='認定機';isCertified=true;deadline=h||g;deadlineSource=h?'H列（認定期限）':'G列（検定期限／認定期限未登録）';
+
+  // C列の現在区分を基準に、1段階ずつ更新する。
+  // 検定機：G列を過ぎたら認定機（H列があれば認定期限として表示）
+  // 認定機：H列を過ぎたらみなし機
+  if(source.includes('みなし')){
+    certType='みなし機';isDeemed=true;deadline=h||g;deadlineSource=h?'H列（認定期限／期限超過）':(g?'G列（期限）':'');
+  }else if(source.includes('認定機')){
+    if(h&&now>h){
+      certType='みなし機';isDeemed=true;deadline=h;deadlineSource='H列（認定期限／期限超過）';
+    }else{
+      certType='認定機';isCertified=true;deadline=h||g;deadlineSource=h?'H列（認定期限）':(g?'G列（認定期限未登録）':'');
+    }
+  }else if(source.includes('検定機')){
+    if(g&&now>g){
+      certType='認定機';isCertified=true;deadline=h||g;deadlineSource=h?'H列（認定期限／検定期限超過で認定機へ）':'G列（検定期限超過→認定機／認定期限未登録）';
+    }else{
+      certType='検定機';deadline=g||h;deadlineSource=g?'G列（検定期限）':(h?'H列（認定期限）':'');
+    }
   }else{
-    certType=source.includes('検定機')?'検定機':(source||'検定機');deadline=g||h;deadlineSource=g?'G列（検定期限）':(h?'H列（認定期限）':'');
+    // 区分が空欄等の場合の安全な補完。H列期限超過ならみなし、G列期限超過なら認定。
+    if(h&&now>h){certType='みなし機';isDeemed=true;deadline=h;deadlineSource='H列（認定期限／期限超過）';}
+    else if(g&&now>g){certType='認定機';isCertified=true;deadline=h||g;deadlineSource=h?'H列（認定期限）':'G列（検定期限超過→認定機）';}
+    else{certType=source||'検定機';deadline=g||h;deadlineSource=g?'G列（検定期限）':(h?'H列（認定期限）':'');}
   }
   return {certType,isCertified,isDeemed,deadline,deadlineSource};
+}
+
+function parseSavedDeadline(v){
+  if(!v)return null;
+  const m=String(v).match(/(\d{4})[\/年.-](\d{1,2})[\/月.-](\d{1,2})/);
+  if(!m)return null;
+  return new Date(+m[1],+m[2]-1,+m[3]);
+}
+function reclassifyRestoredStateFallback(){
+  const now=today0();
+  const update=x=>{
+    if(!x)return;
+    const t=String(x.certType||'');
+    const d=parseSavedDeadline(x.certificationDeadline);
+    if(!d)return;
+    const src=String(x.deadlineSource||'');
+    if(t.includes('検定機')&&now>d){
+      x.certType='認定機';x.isCertified=true;x.isDeemed=false;
+      x.deadlineSource=src.includes('G列')?src+'／検定期限超過→認定機':'G列（検定期限超過→認定機）';
+    }else if(t.includes('認定機')&&src.includes('H列')&&now>d){
+      x.certType='みなし機';x.isCertified=false;x.isDeemed=true;
+      x.deadlineSource=src.includes('期限超過')?src:src+'／期限超過→みなし機';
+    }
+  };
+  (machines||[]).forEach(update);
+  (assignments||[]).forEach(update);
 }
 function enrichMachines(){
   if(!machines.length)return;
@@ -1101,7 +1144,12 @@ window.onload=function(){
       newMachineRows=Array.isArray(data.newMachineRows)?data.newMachineRows:[];
       layoutWb=null;
       // Firebaseに保存された前回の区分をそのまま使わず、起動日の期限で再判定する。
-      if(machines.length&&certRecords.length&&typeof enrichMachines==='function')enrichMachines();
+      if(machines.length&&certRecords.length&&typeof enrichMachines==='function'){
+        enrichMachines();
+      }else if(machines.length){
+        // 旧保存データにcertRecordsが無い場合も、画面に残っている期限から最低限の区分更新を行う。
+        reclassifyRestoredStateFallback();
+      }
 
       if(numbers.length){
         const matched=new Set(assignments.map(x=>x.number)).size;
